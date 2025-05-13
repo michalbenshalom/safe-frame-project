@@ -23,21 +23,23 @@ def download_and_extract_s3_files():
         aws_secret_access_key=AWS_SECRET_KEY
     )
 
-    # List of files to download
-    files_to_download = ["DCSASSDataSet.zip", "Guns-Knives Object Detection.zip"]
-    extracted_files = {}
+    response = s3.list_objects_v2(Bucket=AWS_BUCKET_NAME)
+    if 'Contents' not in response:
+        return {}
 
-    for file_name in files_to_download:
+    zip_files = [obj['Key'] for obj in response['Contents'] if obj['Key'].lower().endswith('.zip')]
+
+    extracted_files = {}
+    for file_name in zip_files:
         # Download file from S3
-        response = s3.get_object(Bucket=AWS_BUCKET_NAME, Key=file_name)
-        zip_content = response["Body"].read()
+        obj = s3.get_object(Bucket=AWS_BUCKET_NAME, Key=file_name)
+        zip_content = obj['Body'].read()
 
         # Extract ZIP file in memory
         with zipfile.ZipFile(io.BytesIO(zip_content)) as z:
             extracted_files[file_name] = {name: z.read(name) for name in z.namelist()}
 
     return extracted_files
-
 
 if __name__ == "__main__":
     files = download_and_extract_s3_files()

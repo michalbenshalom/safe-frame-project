@@ -2,10 +2,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Debug S3 Manager",
+           "name": "Python: Uvicorn",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/data_management/s3_manager.py",
+            "module": "uvicorn",
+            "args": [
+                "src.main:app",
+                "--reload"
+            ],
             "console": "integratedTerminal"
         }
     ]
