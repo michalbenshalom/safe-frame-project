@@ -23,9 +23,11 @@ def download_and_extract_s3_files():
         aws_secret_access_key=AWS_SECRET_KEY
     )
 
+
     response = s3.list_objects_v2(Bucket=AWS_BUCKET_NAME)
     if 'Contents' not in response:
         return {}
+        print(response)
 
     zip_files = [obj['Key'] for obj in response['Contents'] if obj['Key'].lower().endswith('.zip')]
 
