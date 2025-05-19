@@ -28,8 +28,9 @@ def download_and_extract_s3_files():
         return {}
 
     zip_files = [obj['Key'] for obj in response['Contents'] if obj['Key'].lower().endswith('.zip')]
-
-    extracted_files = {}
+    extracted_files = {} if zip_files else None
+    if zip_files:
+        zip_files = [zip_files[1]]
     for file_name in zip_files:
         # Download file from S3
         obj = s3.get_object(Bucket=AWS_BUCKET_NAME, Key=file_name)
@@ -43,4 +44,4 @@ def download_and_extract_s3_files():
 
 if __name__ == "__main__":
     files = download_and_extract_s3_files()
-    print(files.keys())  # הדפס את שמות הקבצים שהורדו
+    print(files.keys())  
