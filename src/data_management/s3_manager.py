@@ -14,7 +14,7 @@ AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 
 def download_and_extract_s3_files():
     """
-    Connect to S3, download 3 ZIP files, and extract them into memory.
+    Connect to S3, download all folders and their video files, and organize them in memory.
     """
     # Connect to S3
     s3 = boto3.client(
@@ -23,27 +23,39 @@ def download_and_extract_s3_files():
         aws_secret_access_key=AWS_SECRET_KEY
     )
 
-
+    # List all objects in the bucket
     response = s3.list_objects_v2(Bucket=AWS_BUCKET_NAME)
     if 'Contents' not in response:
         return {}
-        print(response)
 
-    zip_files = [obj['Key'] for obj in response['Contents'] if obj['Key'].lower().endswith('.zip')]
-    extracted_files = {} if zip_files else None
-    if zip_files:
-        zip_files = [zip_files[1]]
-    for file_name in zip_files:
-        # Download file from S3
-        obj = s3.get_object(Bucket=AWS_BUCKET_NAME, Key=file_name)
-        zip_content = obj['Body'].read()
+    # Organize files by folder
+    folder_structure = {}
+    for obj in response['Contents']:
+        key = obj['Key']
+        if key.endswith('/'):  # Skip folder markers
+            continue
 
-        # Extract ZIP file in memory
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as z:
-            extracted_files[file_name] = {name: z.read(name) for name in z.namelist()}
+        # Extract folder name and file name
+        parts = key.split('/')
+        if len(parts) > 1:
+            folder_name = parts[0]
+            file_name = '/'.join(parts[1:])
+        else:
+            folder_name = "root"
+            file_name = parts[0]
 
-    return extracted_files
+        # Download the file
+        obj = s3.get_object(Bucket=AWS_BUCKET_NAME, Key=key)
+        file_content = obj['Body'].read()
+
+        # Organize files in a dictionary
+        if folder_name not in folder_structure:
+            folder_structure[folder_name] = {}
+        folder_structure[folder_name][file_name] = file_content
+
+    return folder_structure
 
 if __name__ == "__main__":
     files = download_and_extract_s3_files()
-    print(files.keys())  
+    for folder, videos in files.items():
+        print(f"Folder: {folder}, Files: {list(videos.keys())}")
