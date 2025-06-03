@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from src.data_management.s3_manager import download_and_extract_s3_files
+# from src.data_management.s3_manager import download_and_extract_s3_files
 from src.data_management.validate import validate_video_files
+from src.data_management.s3_manager import download_and_extract_s3_files_streamed
 
 
 app = FastAPI()
@@ -11,6 +12,6 @@ def root():
 
 @app.get("/validate-videos")
 def validate():
-    files = download_and_extract_s3_files()
+    files = download_and_extract_s3_files_streamed()
     results = validate_video_files(files)
     return results

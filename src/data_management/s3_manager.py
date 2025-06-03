@@ -1,48 +1,45 @@
 import boto3
-import zipfile
-import io
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# טען משתני סביבה מהקובץ .env
 load_dotenv()
 
-# Get AWS credentials from environment variables
 AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
 AWS_SECRET_KEY = os.getenv("AWS_SECRET_KEY")
 AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 
-def download_and_extract_s3_files():
+
+def stream_s3_videos():
     """
-    Connect to S3, download 3 ZIP files, and extract them into memory.
+    Generator שמזרים קובצי וידאו מהתיקיות ב־S3 בזה אחר זה.
+    מחזיר בכל איטרציה:
+    - שם התיקייה (למשל: Arson)
+    - שם הקובץ (video1.mp4)
+    - תוכן הקובץ (bytes)
     """
-    # Connect to S3
     s3 = boto3.client(
         "s3",
         aws_access_key_id=AWS_ACCESS_KEY,
         aws_secret_access_key=AWS_SECRET_KEY
     )
 
+    paginator = s3.get_paginator('list_objects_v2')
 
-    response = s3.list_objects_v2(Bucket=AWS_BUCKET_NAME)
-    if 'Contents' not in response:
-        return {}
-        print(response)
+    for page in paginator.paginate(Bucket=AWS_BUCKET_NAME, Prefix="DCSASS Dataset/"):
+        for obj in page.get('Contents', []):
+            key = obj['Key']
 
-    zip_files = [obj['Key'] for obj in response['Contents'] if obj['Key'].lower().endswith('.zip')]
+            if key.endswith('/') or 'Labels' in key:
+                continue  
+            parts = key.split('/')
+            if len(parts) < 3:
+                continue  # צפה למבנה DCSASS Dataset/קטגוריה/קובץ
 
-    extracted_files = {}
-    for file_name in zip_files:
-        # Download file from S3
-        obj = s3.get_object(Bucket=AWS_BUCKET_NAME, Key=file_name)
-        zip_content = obj['Body'].read()
+            folder = parts[1]         # למשל Arson
+            file_name = parts[2]      # למשל video123.mp4
 
-        # Extract ZIP file in memory
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as z:
-            extracted_files[file_name] = {name: z.read(name) for name in z.namelist()}
+            response = s3.get_object(Bucket=AWS_BUCKET_NAME, Key=key)
+            file_bytes = response['Body'].read()
 
-    return extracted_files
-
-if __name__ == "__main__":
-    files = download_and_extract_s3_files()
-    print(files.keys())  # הדפס את שמות הקבצים שהורדו
+            yield folder, file_name, file_bytes
