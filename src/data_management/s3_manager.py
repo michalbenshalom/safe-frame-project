@@ -1,61 +1,45 @@
 import boto3
-import zipfile
-import io
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# טען משתני סביבה מהקובץ .env
 load_dotenv()
 
-# Get AWS credentials from environment variables
 AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
 AWS_SECRET_KEY = os.getenv("AWS_SECRET_KEY")
 AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 
-def download_and_extract_s3_files():
+
+def stream_s3_videos():
     """
-    Connect to S3, download all folders and their video files, and organize them in memory.
+    Generator שמזרים קובצי וידאו מהתיקיות ב־S3 בזה אחר זה.
+    מחזיר בכל איטרציה:
+    - שם התיקייה (למשל: Arson)
+    - שם הקובץ (video1.mp4)
+    - תוכן הקובץ (bytes)
     """
-    # Connect to S3
     s3 = boto3.client(
         "s3",
         aws_access_key_id=AWS_ACCESS_KEY,
         aws_secret_access_key=AWS_SECRET_KEY
     )
 
-    # List all objects in the bucket
-    response = s3.list_objects_v2(Bucket=AWS_BUCKET_NAME)
-    if 'Contents' not in response:
-        return {}
+    paginator = s3.get_paginator('list_objects_v2')
 
-    # Organize files by folder
-    folder_structure = {}
-    for obj in response['Contents']:
-        key = obj['Key']
-        if key.endswith('/'):  # Skip folder markers
-            continue
+    for page in paginator.paginate(Bucket=AWS_BUCKET_NAME, Prefix="DCSASS Dataset/"):
+        for obj in page.get('Contents', []):
+            key = obj['Key']
 
-        # Extract folder name and file name
-        parts = key.split('/')
-        if len(parts) > 1:
-            folder_name = parts[0]
-            file_name = '/'.join(parts[1:])
-        else:
-            folder_name = "root"
-            file_name = parts[0]
+            if key.endswith('/') or 'Labels' in key:
+                continue  
+            parts = key.split('/')
+            if len(parts) < 3:
+                continue  # צפה למבנה DCSASS Dataset/קטגוריה/קובץ
 
-        # Download the file
-        obj = s3.get_object(Bucket=AWS_BUCKET_NAME, Key=key)
-        file_content = obj['Body'].read()
+            folder = parts[1]         # למשל Arson
+            file_name = parts[2]      # למשל video123.mp4
 
-        # Organize files in a dictionary
-        if folder_name not in folder_structure:
-            folder_structure[folder_name] = {}
-        folder_structure[folder_name][file_name] = file_content
+            response = s3.get_object(Bucket=AWS_BUCKET_NAME, Key=key)
+            file_bytes = response['Body'].read()
 
-    return folder_structure
-
-if __name__ == "__main__":
-    files = download_and_extract_s3_files()
-    for folder, videos in files.items():
-        print(f"Folder: {folder}, Files: {list(videos.keys())}")
+            yield folder, file_name, file_bytes

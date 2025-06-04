@@ -1,53 +1,37 @@
 import cv2
-import numpy as np
 import tempfile
 import os
-import json
 
-def validate_video_files(files_dict: dict, allowed_extensions: list[str] = [".mp4", ".avi", ".mov", ".mkv"]) -> dict:
+def validate_video_file_single(file_name, file_bytes, allowed_extensions=[".mp4", ".avi", ".mov", ".mkv"]):
     """
-    Validates video files extracted from ZIPs.
-    Saves result report to 'video_validation_results.json'.
+    מקבל קובץ וידאו (כ־bytes) + שם קובץ, ומוודא שהוא:
+    - בסיומת תקפה
+    - נפתח בהצלחה עם OpenCV
+    - יש בו לפחות פריים אחד
     """
-    results = {}
+    if not any(file_name.lower().endswith(ext) for ext in allowed_extensions):
+        return False, "❌ Unsupported file extension"
 
-    for zip_name, inner_files in files_dict.items():
-        for file_name, content in inner_files.items():
-            full_name = f"{zip_name}/{file_name}"
+    try:
+        # כתיבה זמנית של הקובץ לדיסק
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_name)[1]) as tmp:
+            tmp.write(file_bytes)
+            tmp_path = tmp.name
 
-            # Check if file extension is valid
-            if not any(file_name.lower().endswith(ext) for ext in allowed_extensions):
-                results[full_name] = "Not a supported video file"
-                continue
+        cap = cv2.VideoCapture(tmp_path)
 
-            try:
-                # Save video to temp file
-                with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_name)[1]) as temp_file:
-                    temp_file.write(content)
-                    temp_file_path = temp_file.name
+        if not cap.isOpened():
+            os.remove(tmp_path)
+            return False, "❌ Cannot open video"
 
-                # Try to open with OpenCV
-                cap = cv2.VideoCapture(temp_file_path)
+        ret, frame = cap.read()
+        cap.release()
+        os.remove(tmp_path)
 
-                if not cap.isOpened():
-                    results[full_name] = " File could not be opened with OpenCV"
-                else:
-                    ret, frame = cap.read()
-                    if not ret or frame is None:
-                        results[full_name] = "No frames found in video file"
-                    else:
-                        results[full_name] = " Valid"
-                
-                cap.release()
-                os.remove(temp_file_path)
+        if not ret or frame is None:
+            return False, "❌ No frames found"
 
-            except Exception as e:
-                results[full_name] = f"Error during validation: {str(e)}"
+        return True, "✅ Valid"
 
-    # Save results to JSON file
-    with open("video_validation_results.json", "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=4)
-
-    print(" Results saved to video_validation_results.json")
-
-    return results
+    except Exception as e:
+        return False, f"❌ Error: {str(e)}"
