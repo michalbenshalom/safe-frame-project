@@ -1,17 +1,11 @@
 from fastapi import FastAPI
-# from src.data_management.s3_manager import download_and_extract_s3_files
-from src.data_management.validate import validate_video_files
-from src.data_management.s3_manager import download_and_extract_s3_files_streamed
+from data_management.data_pipeline import process_and_validate_videos
+import pdb
 
 
 app = FastAPI()
 
 @app.get("/")
 def root():
-    return {"message": "Hello from SafeFrame API"}
-
-@app.get("/validate-videos")
-def validate():
-    files = download_and_extract_s3_files_streamed()
-    results = validate_video_files(files)
-    return results
+    result = process_and_validate_videos()
+    return {"message": "Hello from SafeFrame API", "process_result": result}

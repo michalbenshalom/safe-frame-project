@@ -12,13 +12,17 @@
                 "--reload"
             ],
             "console": "integratedTerminal"
-        }, 
+        },
         {
-            "name": "Python: S3 Manager",
+            "name": "Python: Debug main.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/data_management/s3_manager.py",
-            "console": "integratedTerminal"
+            "program": "${workspaceFolder}/src/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            }
         }
     ]
 }

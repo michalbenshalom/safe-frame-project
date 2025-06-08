@@ -10,7 +10,7 @@ def validate_video_file_single(file_name, file_bytes, allowed_extensions=[".mp4"
     - יש בו לפחות פריים אחד
     """
     if not any(file_name.lower().endswith(ext) for ext in allowed_extensions):
-        return False, "❌ Unsupported file extension"
+        return False, "Unsupported file extension"
 
     try:
         # כתיבה זמנית של הקובץ לדיסק
@@ -22,16 +22,16 @@ def validate_video_file_single(file_name, file_bytes, allowed_extensions=[".mp4"
 
         if not cap.isOpened():
             os.remove(tmp_path)
-            return False, "❌ Cannot open video"
+            return False, "Cannot open video"
 
         ret, frame = cap.read()
         cap.release()
         os.remove(tmp_path)
 
         if not ret or frame is None:
-            return False, "❌ No frames found"
+            return False, "No frames found"
 
-        return True, "✅ Valid"
+        return True, "Valid"
 
     except Exception as e:
-        return False, f"❌ Error: {str(e)}"
+        return False, f"Error: {str(e)}"
