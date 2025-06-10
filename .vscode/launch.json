@@ -12,17 +12,6 @@
                 "--reload"
             ],
             "console": "integratedTerminal"
-        },
-        {
-            "name": "Python: Debug main.py",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/src/main.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}/src"
-            }
         }
     ]
 }
