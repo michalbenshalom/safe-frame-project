@@ -5,7 +5,8 @@ import numpy as np
 
 def video_to_frames(video_bytes, fps_interval=1):
     """
-    מקבל קובץ וידאו כ־bytes, ומחזיר רשימת פריימים (תמונות) שנחולצו כל fps_interval שניות.
+    Converts a video file given as bytes into a list of frames (images), extracting one frame every fps_interval seconds.
+    Returns a list of tuples: (frame_index, frame).
     """
     # שמירה זמנית של הקובץ כווידאו בדיסק
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:

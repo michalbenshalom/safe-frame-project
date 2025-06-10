@@ -53,9 +53,20 @@ def stream_s3_videos():
 
 
 def load_labels_for_category_s3(category: str):
+    
     """
-    טוען קובץ תיוגים של קטגוריה מסוימת מ־S3 ומחזיר מילון:
-    (video_name, frame_index) → label
+    Loads a label file for a specific category from an S3 bucket and returns a dictionary mapping filenames to labels.
+    Args:
+        category (str): The category name whose label file should be loaded from S3.
+    Returns:
+        dict: A dictionary where each key is a filename (str) and each value is the corresponding label (int).
+              Returns an empty dictionary if the file cannot be loaded or an error occurs.
+    Notes:
+        - The function connects to AWS S3 using credentials defined elsewhere.
+        - It expects the label file to be in CSV format at the path 'DCSASS Dataset/Labels/{category}.csv' in the S3 bucket.
+        - The CSV file should have columns: filename, category, label (no header row).
+        - Empty rows are removed before processing.
+        - If an error occurs (e.g., file not found, connection error), the function prints the traceback and returns an empty dictionary.
     """
     s3 = boto3.client(
         "s3",

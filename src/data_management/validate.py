@@ -3,11 +3,22 @@ import tempfile
 import os
 
 def validate_video_file_single(file_name, file_bytes, allowed_extensions=[".mp4", ".avi", ".mov", ".mkv"]):
+   
     """
-    מקבל קובץ וידאו (כ־bytes) + שם קובץ, ומוודא שהוא:
-    - בסיומת תקפה
-    - נפתח בהצלחה עם OpenCV
-    - יש בו לפחות פריים אחד
+    Validates a single video file by checking its extension, ensuring it can be opened with OpenCV, and verifying that it contains at least one frame.
+    Parameters:
+        file_name (str): The name of the video file.
+        file_bytes (bytes): The content of the video file as bytes.
+        allowed_extensions (list, optional): List of allowed video file extensions. Defaults to [".mp4", ".avi", ".mov", ".mkv"].
+    Returns:
+        tuple: (bool, str) where the boolean indicates if the file is valid, and the string provides a message describing the result.
+    The function performs the following checks:
+    - Verifies that the file extension is among the allowed types.
+    - Writes the file bytes to a temporary file on disk.
+    - Attempts to open the video file using OpenCV.
+    - Checks that the video contains at least one frame.
+    - Cleans up the temporary file after validation.
+    Returns a tuple indicating whether the file is valid and a message describing the validation result.
     """
     if not any(file_name.lower().endswith(ext) for ext in allowed_extensions):
         return False, "Unsupported file extension"

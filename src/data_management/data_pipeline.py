@@ -7,8 +7,15 @@ import cv2
 
 def process_and_validate_videos():
     """
-    Pipeline שמוריד קובצי וידאו מ-S3, טוען תיוגים לפי קטגוריה,
-    מחלץ פריימים ושומר כל פריים לפי התיוג שלו (0 או 1).
+    Downloads video files from S3, loads labels per category, extracts frames from each video,
+    and saves each frame into a directory structure according to its label (0 or 1).
+    For each video:
+        - Loads labels for the relevant category (once per category).
+        - Validates the video file.
+        - Extracts frames at 1 FPS.
+        - For each frame, checks if a label exists; if so, saves the frame as a JPEG
+          in a subfolder named "ONE" or "ZERO" according to the label, organized by category and event.
+    Returns a list of tuples with (category, event_folder, file_name, saved_frame_count) for all processed videos.
     """
     all_results = []
     base_output_dir = "data/processed"
