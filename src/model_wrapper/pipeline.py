@@ -1,23 +1,29 @@
-# pipeline.py
+from config import CONFIG
+from data.dataset_loader import load_dataset
+from train.trainer import train_model
+from train.evaluation import evaluate_model
+from models.vit_model import get_vit_model
+from models.resnet_model import get_resnet_model
+# from models.blip_model import get_blip_model
+# from models.llava_model import get_llava_model  
 
-from model_wrapper.models.resnet_model import trainModel as trainResNet
-from model_wrapper.models.vit_model import trainModel as trainViT
+MODEL_REGISTRY = {
+    "vit": get_vit_model,
+    "resnet": get_resnet_model,
+    # "blip": get_blip_model,
+    # "llava": get_llava_model
+}
 
-def run_models_pipeline(model_type):
-    """
-    Run the pipeline based on the selected model type.
+def model_pipeline():
+    train_loader, val_loader = load_dataset(CONFIG["dataset_path"], CONFIG["batch_size"])
 
-    Args:
-        model_type (str): The type of model to train ("ViT" or "ResNet").
-    """
-    if model_type == "ViT":
-        trainViT()
-    elif model_type == "ResNet":
-        trainResNet()
-    else:
-        print("Invalid model type. Please choose 'ViT' or 'ResNet'.")
+    for model_name in CONFIG["model_names"]:
+        print(f"=== Training {model_name} ===")
+        model_fn = MODEL_REGISTRY[model_name]
+        hf_name = CONFIG["model_hf_names"][model_name]
+        model = model_fn(CONFIG["num_classes"], hf_name)
+        #do train flag
+        train_model(model, train_loader, val_loader, CONFIG, model_name)
+        #do eval flag
+        #evaluate_model(model, val_loader, CONFIG)
 
-# Example usage
-if __name__ == "__main__":
-    model_type = input("Enter model type (ViT/ResNet): ")
-    run_models_pipeline(model_type)

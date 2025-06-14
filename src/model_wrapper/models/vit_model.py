@@ -1,8 +1,5 @@
-# vit_model.py
+from transformers import ViTForImageClassification
 
-def trainModel():
-    """
-    Function to train the ViT model.
-    """
-    print("Training ViT model...")
-    # Add ViT training logic here
+def trainModel(num_classes, hf_name):
+    model = ViTForImageClassification.from_pretrained(hf_name, num_labels=num_classes)
+    return model
