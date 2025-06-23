@@ -20,9 +20,9 @@ def trainModel():
     test_size = len(dataset) - train_size - val_size
 
     train_ds, val_ds, test_ds = random_split(dataset, [train_size, val_size, test_size])
-    train_loader = DataLoader(train_ds, batch_size=32, shuffle=True)
-    val_loader = DataLoader(val_ds, batch_size=32)
-    test_loader = DataLoader(test_ds, batch_size=32)
+    train_loader = DataLoader(train_ds, batch_size=4, shuffle=True)
+    val_loader = DataLoader(val_ds, batch_size=4)
+    test_loader = DataLoader(test_ds, batch_size=4)
 
     model = models.resnet18(pretrained=True)
     model.fc = nn.Linear(model.fc.in_features, 1)
