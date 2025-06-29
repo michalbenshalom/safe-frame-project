@@ -1,7 +1,7 @@
 # pipeline.py
 
-from src.model_wrapper.models.resnet_model import trainModel as trainResNet
-from src.model_wrapper.models.vit_model import trainModel as trainViT
+from model_wrapper.models.resnet_model import trainModel as trainResNet
+from model_wrapper.models.vit_model import trainModel as trainViT
 import sys
 
 def run_models_pipeline(model_type):
