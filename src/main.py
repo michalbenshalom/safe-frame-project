@@ -30,8 +30,6 @@ def root():
         print(traceback.format_exc())
         return {"error": str(e)}
 
-
-
 @app.get("/metrics")
 def metrics():
     weights = "resnet18_trained.pth" if MODEL_TYPE.lower() == "resnet" else "vit_b16_trained.pth"
