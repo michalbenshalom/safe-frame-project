@@ -6,7 +6,7 @@ from src.model_wrapper.train.test_only import test_model
 
 
 app = FastAPI()
-
+ 
 @app.get("/")
 def root():
     try:
