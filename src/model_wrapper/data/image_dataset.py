@@ -17,9 +17,8 @@ class ImageDataset(Dataset):
 
     def __getitem__(self, idx):
         image = Image.open(self.image_paths[idx]).convert("RGB")
-        label = torch.tensor(self.labels[idx], dtype=torch.float32)
         image = self.transform(image)
+        label = torch.tensor(self.labels[idx], dtype=torch.float32)        
         return image, label
-
 
 

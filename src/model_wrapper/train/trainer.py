@@ -1,36 +1,38 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
+from torch import nn, optim
+from tqdm import tqdm
 
-def train_model(model, train_loader, val_loader, device, num_epochs=5, lr=1e-4):
-    criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+def train(model, train_loader, val_loader, config, model_name):
+    """
+    Function to handle the training process.
+    """
 
-    for epoch in range(num_epochs):
+    device = config.get("device", "cpu")
+    epochs = config.get("epochs", 5)
+    learning_rate = config.get("learning_rate", 2e-5)
+
+    model.to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    print(f"Starting training process for {model_name}...")
+    for epoch in range(epochs):
         model.train()
-        total_loss = 0.0
-        for images, labels in train_loader:
-            images, labels = images.to(device), labels.to(device).unsqueeze(1)
-            outputs = model(images)
-            loss = criterion(outputs, labels)
+        running_loss = 0.0
+        for batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}"):
+            print(type(batch), len(batch), batch)
+            inputs, labels = batch
+            inputs, labels = inputs.to(device), labels.to(device)
             optimizer.zero_grad()
+            if inputs.ndim == 3:
+                inputs = inputs.unsqueeze(0)
+            if labels.ndim == 0:
+                labels = labels.unsqueeze(0)
+            labels = labels.long()
+            outputs = model(inputs).logits if hasattr(model(inputs), 'logits') else model(inputs)
+            loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-            total_loss += loss.item() * images.size(0)
-
-        avg_train_loss = total_loss / len(train_loader.dataset)
-
-        # Validation
-        model.eval()
-        val_loss = 0.0
-        with torch.no_grad():
-            for images, labels in val_loader:
-                images, labels = images.to(device), labels.to(device).unsqueeze(1)
-                outputs = model(images)
-                loss = criterion(outputs, labels)
-                val_loss += loss.item() * images.size(0)
-
-        avg_val_loss = val_loss / len(val_loader.dataset)
-        print(f"[Epoch {epoch+1}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
-
-    return model
+            running_loss += loss.item()
+        avg_loss = running_loss / len(train_loader)
+        print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}")
+    print("Training complete.")
