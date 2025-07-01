@@ -4,18 +4,27 @@ import os
 from torch import nn, optim
 import torch
 from tqdm import tqdm
-
+import io
+import boto3
 from src.config import MODEL_TYPE
+from dotenv import load_dotenv
+
+from src.data_management.s3_manager import AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_BUCKET_NAME
+
+load_dotenv()
+
+AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
+AWS_SECRET_KEY = os.getenv("AWS_SECRET_KEY")
+AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
+
 def train(model, train_loader, val_loader, config, model_name):
     device = config.get("device", "cpu")
     epochs = config.get("epochs", 5)
     lr = config.get("learning_rate", 2e-5)
     patience = config.get("early_stopping_patience", 3)
-    save_dir = config.get("save_dir", ".")
-    os.makedirs(save_dir, exist_ok=True)
-
+    # S3 save path
     filename = generate_model_filename()
-    save_path = os.path.join(save_dir, filename)
+    s3_path = f"Models/{filename}"
 
     model.to(device)
     criterion = nn.CrossEntropyLoss()
@@ -36,8 +45,17 @@ def train(model, train_loader, val_loader, config, model_name):
         if improved:
             best_val_loss = val_loss
             best_model_state = copy.deepcopy(model.state_dict())
-            torch.save(best_model_state, save_path)
-            print(f"Saved best model so far (Val Loss={val_loss:.4f})")
+            # Save directly to S3 (no local file)
+            buffer = io.BytesIO()
+            torch.save(best_model_state, buffer)
+            buffer.seek(0)
+            s3 = boto3.client(
+                "s3",
+                aws_access_key_id=AWS_ACCESS_KEY,
+                aws_secret_access_key=AWS_SECRET_KEY
+            )
+            s3.upload_fileobj(buffer, AWS_BUCKET_NAME, s3_path)
+            print(f"Saved best model so far to s3://{AWS_BUCKET_NAME}/{s3_path} (Val Loss={val_loss:.4f})")
             epochs_without_improvement = 0
         else:
             epochs_without_improvement += 1
@@ -88,7 +106,6 @@ def validate(model, dataloader, criterion, device, epoch, total_epochs):
     avg_loss = total_loss / len(dataloader)
     accuracy = correct / total * 100
     return avg_loss, accuracy
-
 
 def preprocess(inputs, labels, device):
     inputs, labels = inputs.to(device), labels.to(device)
