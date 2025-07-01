@@ -7,7 +7,6 @@ CONFIG = {
     "model_names": ["resnet", "vit", "blip", "llava"],
     "dataset_path": "./data/processed/",
     "num_classes": 10,
-    "device": "cuda",
     "early_stopping_patience": 3,
     "save_dir": "C:/Users/MichalBenShalom/OneDrive - Infraedge LTD/Desktop/הורדות/course/Project/trained_model/",  
     "checkpoint_dir": "./checkpoints/",
