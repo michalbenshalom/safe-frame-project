@@ -37,7 +37,7 @@ def train(model, train_loader, val_loader, config):
     s3_path = f"Models/{MODEL_TYPE}/{filename}"
 
     model.to(device)  # העבר את המודל למכשיר המתאים
-    criterion = nn.CrossEntropyLoss() #nn.BCEWithLogitsLoss()  #nn.CrossEntropyLoss() # פונקציית הפסד לסיווג בינארי
+    criterion = nn.BCEWithLogitsLoss()  #nn.CrossEntropyLoss() # פונקציית הפסד לסיווג בינארי
     optimizer = optim.Adam(model.parameters(), lr=lr)  # אופטימייזר
 
     best_model_state, best_val_loss = None, float('inf')  # שמור את המודל הטוב ביותר
@@ -143,7 +143,8 @@ def preprocess(inputs, labels, device):
         inputs = inputs.unsqueeze(0)  # הוסף batch dimension אם צריך
     if labels.ndim == 0:
         labels = labels.unsqueeze(0)  # הוסף batch dimension ל-label
-
+    if labels.ndim == 1:
+        labels = labels.unsqueeze(1)
     labels = labels.float()  # BCEWithLogitsLoss דורשת float ולא long
     return inputs, labels
 
