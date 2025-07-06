@@ -42,6 +42,9 @@ def train(model, train_loader, val_loader, config):
 
     best_model_state, best_val_loss = None, float('inf')  # שמור את המודל הטוב ביותר
     epochs_without_improvement = 0  # מונה לאפוקים ללא שיפור
+    
+    history = []
+    best_val_acc = 0.0 
 
     for epoch in range(epochs):
         # אפוק אימון
@@ -49,13 +52,18 @@ def train(model, train_loader, val_loader, config):
         # אפוק ולידציה
         val_loss, val_acc = validate(model, val_loader, criterion, device, epoch, epochs)
 
-        print(f"Epoch {epoch+1}/{epochs}: "
-              f"Train Loss={train_loss:.4f}, Acc={train_acc:.2f}%, "
-              f"Val Loss={val_loss:.4f}, Acc={val_acc:.2f}%")
-
+        history.append({
+            "epoch": epoch + 1,
+            "train_loss": train_loss,
+            "train_acc": train_acc,
+            "val_loss": val_loss,
+            "val_acc": val_acc
+        })
+        
         improved = val_loss < best_val_loss  # האם יש שיפור בוולידציה
         if improved:
             try:
+                best_val_acc = val_acc  # עדכן את הדיוק הטוב ביותר
                 best_val_loss = val_loss
                 best_model_state = copy.deepcopy(model.state_dict())  # שמור את מצב המודל
                 # שמור ישירות ל-S3 (ללא קובץ פיזי)
@@ -82,7 +90,13 @@ def train(model, train_loader, val_loader, config):
     if best_model_state:
         model.load_state_dict(best_model_state)  # טען את המודל הטוב ביותר
         print(f"Loaded best model (Val Loss={best_val_loss:.4f})")
-
+    return {
+        "model": model,
+        "best_val_loss": best_val_loss,
+        "best_val_accuracy": best_val_acc,
+        "train_history": history,
+        "s3_path": s3_path
+    }
 
 def train_one_epoch(model, dataloader, optimizer, criterion, device, epoch, total_epochs):
     """

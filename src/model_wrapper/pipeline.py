@@ -23,11 +23,6 @@ def run_models_pipeline(model_type):
     print(f"=== Training {model_type} ===")
     model_fn = MODEL_REGISTRY[model_type.lower()] 
     model = model_fn()
-    train(model, train_dataset, val_dataset, CONFIG)
-    return {
-        "model_type": model_type,
-        "num_classes": CONFIG["num_classes"],
-        "batch_size": CONFIG["batch_size"],
-        "dataset_path": CONFIG["dataset_path"]
-    }
+    trainResult = train(model, train_dataset, val_dataset, CONFIG)
+    return trainResult
 
