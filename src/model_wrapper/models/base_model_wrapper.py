@@ -1,10 +1,12 @@
-import torch
 from abc import ABC, abstractmethod
+from datetime import datetime
+from model_wrapper.models.losses.loss_factory import get_loss_fn
 
 class BaseModelWrapper(ABC):
     def __init__(self, config):
         self.config = config
         self.model = self.get_model()
+        self.init_criterion()
 
     @abstractmethod
     def get_model(self):
@@ -17,11 +19,15 @@ class BaseModelWrapper(ABC):
     @abstractmethod
     def forward_pass(self, inputs):
         pass
+    
+    def init_criterion(self):
+        loss_type = self.config.get("loss_type", "bce")
+        loss_params = self.config.get("loss_params", {})
+        self.criterion = get_loss_fn(loss_type, loss_params)
 
-    @abstractmethod
-    def get_criterion(self):
-        pass
-
-    @abstractmethod
     def generate_model_filename(self):
-        pass
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        return f"{self.__class__.__name__}_{timestamp}_best.pt"
+    
+    def predict(self, outputs):
+        return self.criterion.predict(outputs)

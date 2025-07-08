@@ -1,7 +1,5 @@
-import torch
 from torch import nn
 from transformers import ResNetForImageClassification
-from datetime import datetime
 from src.config import CONFIG
 from .base_model_wrapper import BaseModelWrapper
 
@@ -13,7 +11,12 @@ class ResNetModelWrapper(BaseModelWrapper):
             num_labels=CONFIG["num_classes"],
             ignore_mismatched_sizes=True
         )
-        model.fc = nn.Linear(model.fc.in_features, 1)
+        if hasattr(model, 'fc'):
+            model.fc = nn.Linear(model.fc.in_features, CONFIG["num_classes"])
+        elif hasattr(model, 'classifier'):
+            model.classifier = nn.Linear(model.classifier.in_features, CONFIG["num_classes"])
+        else:
+            raise ValueError("Unknown model structure")       
         return model
 
     def preprocess(self, inputs, labels, device):
@@ -31,9 +34,4 @@ class ResNetModelWrapper(BaseModelWrapper):
         output = self.model(inputs)
         return output.logits if hasattr(output, 'logits') else output
 
-    def get_criterion(self):
-        return nn.BCEWithLogitsLoss()
-
-    def generate_model_filename(self):
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return f"ResNet_{timestamp}_best.pt"
+    
