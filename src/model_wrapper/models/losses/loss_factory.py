@@ -1,5 +1,3 @@
-# src/model_wrapper/losses/loss_factory.py
-
 from .loss_wrappers import (
     BCEWithLogitsLossWrapper,
     CrossEntropyLossWrapper,
@@ -10,9 +8,9 @@ from .loss_wrappers import FocalLoss
 
 def get_loss_fn(loss_type, params={}):
     if loss_type == "bce":
-        return nn.BCEWithLogitsLoss(**params)
+        return BCEWithLogitsLossWrapper(**params)
     elif loss_type == "cross_entropy":
-        return nn.CrossEntropyLoss(**params)
+        return CrossEntropyLossWrapper(**params)
     elif loss_type == "focal":
         gamma = params.get("gamma", 2.0)
         alpha = params.get("alpha", 0.25)

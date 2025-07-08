@@ -8,8 +8,9 @@ import io
 import boto3
 from torch.utils.tensorboard import SummaryWriter
 from dotenv import load_dotenv
+from model_wrapper.models.base_model_wrapper import BaseModelWrapper
 from src.config import MODEL_TYPE
-from src.model_wrapper.losses.loss_factory import get_loss_fn
+from ..models.losses.loss_factory import get_loss_fn
 from src.data_management.s3_manager import AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_BUCKET_NAME
 from src.utils.model_saver import save_best_model, save_train_history
 from src.utils.logger import get_logger
@@ -21,20 +22,20 @@ AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 logger = get_logger()
 
 
-def train(model, train_loader, val_loader, config):
+def train(model_wrapper: BaseModelWrapper, train_loader, val_loader, config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     epochs = config.get("epochs", 5)
     lr = config.get("learning_rate", 2e-5)
     patience = config.get("early_stopping_patience", 3)
     log_dir = config.get("tensorboard_log_dir", "./runs")
-    filename = generate_model_filename()
+    filename = model_wrapper.generate_model_filename()
     s3_path = f"Models/{MODEL_TYPE}/{filename}"
 
-    model.to(device)
+    model_wrapper.model.to(device)
     loss_type = config.get("loss_type", "bce")
     loss_params = config.get("loss_params", {})
     criterion = get_loss_fn(loss_type, loss_params)
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model_wrapper.model.parameters(), lr=lr)
     writer = SummaryWriter(log_dir=log_dir)
 
     best_model_state, best_val_loss = None, float('inf')
@@ -43,8 +44,8 @@ def train(model, train_loader, val_loader, config):
     history = []
 
     for epoch in range(epochs):
-        train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, criterion, device, epoch, epochs)
-        val_loss, val_acc = validate(model, val_loader, criterion, device, epoch, epochs)
+        train_loss, train_acc = train_one_epoch(model_wrapper, train_loader, optimizer, criterion, device, epoch, epochs)
+        val_loss, val_acc = validate(model_wrapper, val_loader, criterion, device, epoch, epochs)
 
         writer.add_scalar("Loss/Train", train_loss, epoch)
         writer.add_scalar("Loss/Val", val_loss, epoch)
@@ -62,7 +63,7 @@ def train(model, train_loader, val_loader, config):
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_val_acc = val_acc
-            best_model_state = copy.deepcopy(model.state_dict())
+            best_model_state = copy.deepcopy(model_wrapper.model.state_dict())
 
             try:
                 save_best_model(
@@ -84,14 +85,14 @@ def train(model, train_loader, val_loader, config):
                 break
 
     if best_model_state:
-        model.load_state_dict(best_model_state)
+        model_wrapper.model.load_state_dict(best_model_state)
         logger.info(f"Loaded best model (Val Loss={best_val_loss:.4f})")
 
     writer.close()
     save_train_history(history, config=config)
 
     return {
-        "model": model,
+        "model": model_wrapper.model,
         "best_val_loss": best_val_loss,
         "best_val_accuracy": best_val_acc,
         "train_history": history,
@@ -99,15 +100,15 @@ def train(model, train_loader, val_loader, config):
     }
 
 
-def train_one_epoch(model, dataloader, optimizer, criterion, device, epoch, total_epochs):
-    model.train()
+def train_one_epoch(model_wrapper: BaseModelWrapper, dataloader, optimizer, criterion, device, epoch, total_epochs):
+    model_wrapper.model.train()
     total_loss, correct, total = 0.0, 0, 0
     progress_bar = tqdm(dataloader, desc=f"[Train] Epoch {epoch+1}/{total_epochs}")
 
     for inputs, labels in progress_bar:
-        inputs, labels = preprocess(inputs, labels, device)
+        inputs, labels = model_wrapper.preprocess(inputs, labels, device)
         optimizer.zero_grad()
-        outputs = forward_pass(model, inputs)
+        outputs = model_wrapper.forward_pass(inputs)
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
@@ -124,15 +125,16 @@ def train_one_epoch(model, dataloader, optimizer, criterion, device, epoch, tota
     return avg_loss, accuracy
 
 
-def validate(model, dataloader, criterion, device, epoch, total_epochs):
-    model.eval()
+def validate(model_wrapper: BaseModelWrapper, dataloader, criterion, device, epoch, total_epochs):
+    
+    model_wrapper.model.eval()
     total_loss, correct, total = 0.0, 0, 0
     progress_bar = tqdm(dataloader, desc=f"[Val] Epoch {epoch+1}/{total_epochs}")
 
     with torch.no_grad():
         for inputs, labels in progress_bar:
-            inputs, labels = preprocess(inputs, labels, device)
-            outputs = forward_pass(model, inputs)
+            inputs, labels = model_wrapper.preprocess(inputs, labels, device)
+            outputs = model_wrapper.forward_pass(inputs)
             loss = criterion(outputs, labels)
 
             total_loss += loss.item()
@@ -147,23 +149,3 @@ def validate(model, dataloader, criterion, device, epoch, total_epochs):
     return avg_loss, accuracy
 
 
-def preprocess(inputs, labels, device):
-    inputs, labels = inputs.to(device), labels.to(device)
-    if inputs.ndim == 3:
-        inputs = inputs.unsqueeze(0)
-    if labels.ndim == 0:
-        labels = labels.unsqueeze(0)
-    if labels.ndim == 1:
-        labels = labels.unsqueeze(1)
-    labels = labels.float()
-    return inputs, labels
-
-
-def forward_pass(model, inputs):
-    output = model(inputs)
-    return output.logits if hasattr(output, 'logits') else output
-
-
-def generate_model_filename():
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return f"{MODEL_TYPE}_{timestamp}_best.pt"
