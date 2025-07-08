@@ -1,5 +1,5 @@
 RELOAD_DATASET = False  # כי כבר יש לך פריימים מוכנים
-MODEL_TYPE = "VIT"      #  "VIT"  או "ResNet"
+MODEL_TYPE = "ResNet"      #  "VIT"  או "ResNet"
 CONFIG = {
     "batch_size": 32, 
     "epochs": 5,
