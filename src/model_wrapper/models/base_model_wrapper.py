@@ -25,9 +25,8 @@ class BaseModelWrapper(ABC):
         loss_params = self.config.get("loss_params", {})
         self.criterion = get_loss_fn(loss_type, loss_params)
 
-    def generate_model_filename(self):
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return f"{self.__class__.__name__}_{timestamp}_best.pt"
+    def get_best_model_filename(self):
+        return f"{self.__class__.__name__}_best.pt"
     
     def predict(self, outputs):
         return self.criterion.predict(outputs)
