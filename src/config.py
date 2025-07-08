@@ -15,5 +15,9 @@ CONFIG = {
         "resnet": "microsoft/resnet-50",
         "blip": "Salesforce/blip-image-classification-base",
         "llava": "liuhaotian/llava-v1.5-7b"
-    }
+    },
+    "loss_type": "bce",  # או cross_entropy
+    "loss_params": {
+        "pos_weight": None  # לדוגמה: torch.tensor([2.0])
+    },
 }
