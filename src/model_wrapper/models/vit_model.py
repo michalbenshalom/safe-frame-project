@@ -1,8 +1,10 @@
-# vit_model.py
+import torch
+from transformers import ViTForImageClassification
+from src.config import CONFIG
 
 def trainModel():
-    """
-    Function to train the ViT model.
-    """
-    print("Training ViT model...")
-    # Add ViT training logic here
+    hf_name = CONFIG["model_hf_names"]["vit"]
+    model = ViTForImageClassification.from_pretrained(hf_name, num_labels=CONFIG["num_classes"])
+    model.classifier = torch.nn.Linear(model.classifier.in_features, 1)
+    model.config.num_labels = 1
+    return model
