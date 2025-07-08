@@ -1,7 +1,7 @@
 from .loss_wrappers import (
     BCEWithLogitsLossWrapper,
     CrossEntropyLossWrapper,
-    MSELossWrapper
+    FocalLoss
 )
 
 from .loss_wrappers import FocalLoss

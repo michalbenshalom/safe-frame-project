@@ -1,4 +1,3 @@
-from datetime import datetime
 from torch import nn
 from transformers import ViTForImageClassification
 from src.config import CONFIG
@@ -13,23 +12,17 @@ class ViTModelWrapper(BaseModelWrapper):
         return model
 
     def preprocess(self, inputs, labels, device):
-        inputs, labels = inputs.to(device), labels.to(device)
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
         if inputs.ndim == 3:
-            inputs = inputs.unsqueeze(0)
-        if labels.ndim == 0:
-            labels = labels.unsqueeze(0)
-        if labels.ndim == 1:
-            labels = labels.unsqueeze(1)
-        labels = labels.float()
+            inputs = inputs.unsqueeze(0)  
+
+        labels = labels.view(-1, 1).float()
         return inputs, labels
 
     def forward_pass(self, inputs):
         output = self.model(inputs)
         return output.logits if hasattr(output, 'logits') else output
 
-    def get_criterion(self):
-        return nn.BCEWithLogitsLoss()
-
-    def generate_model_filename(self):
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return f"ViT_{timestamp}_best.pt"
+   
