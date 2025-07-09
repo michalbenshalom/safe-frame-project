@@ -6,15 +6,15 @@ from src.utils.logger import get_logger
 
 logger = get_logger()
 
-def evaluate_model(model, test_loader, device, save_csv_path: str = None):
-    model.eval()
+def evaluate_model(model_wrapper, test_loader, device, save_csv_path: str = None):
+    model_wrapper.model.eval()
     all_preds = []
     all_labels = []
 
     with torch.no_grad():
         for images, labels in test_loader:
             images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
+            outputs = model_wrapper.forward_pass(images)
             preds = (torch.sigmoid(outputs) > 0.5).int()
 
             all_preds.extend(preds.cpu().squeeze().tolist())

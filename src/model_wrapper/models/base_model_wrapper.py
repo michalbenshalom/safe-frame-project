@@ -26,7 +26,7 @@ class BaseModelWrapper(ABC):
         self.criterion = get_loss_fn(loss_type, loss_params)
 
     def get_best_model_filename(self):
-        return f"{self.__class__.__name__}_best.pt"
+        return f"{self.__class__.__name__}_best.pth"
     
     def predict(self, outputs):
         return self.criterion.predict(outputs)

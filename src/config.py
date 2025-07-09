@@ -1,8 +1,9 @@
-RELOAD_DATASET = False  # כי כבר יש לך פריימים מוכנים
+RELOAD_DATASET = False  
 MODEL_TYPE = "VIT"      #  "VIT"  או "ResNet"
+USE_EXISTING_MODEL = False
 CONFIG = {
     "batch_size": 32, 
-    "epochs": 5,
+    "epochs": 1,
     "learning_rate": 2e-5,
     "model_names": ["resnet", "vit", "blip", "llava"],
     "dataset_path": "./data/processed/",

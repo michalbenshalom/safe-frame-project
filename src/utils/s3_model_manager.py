@@ -36,7 +36,7 @@ class S3ModelManager:
         try:
             buffer = io.BytesIO()
             self.s3.download_fileobj(self.bucket_name, s3_path, buffer)
-            buffer.seek(0)
+            buffer.seek(0)  
             state_dict = torch.load(buffer, map_location=torch.device("cpu"))
             model.load_state_dict(state_dict)
             logger.info(f"[S3]Model loaded from s3://{self.bucket_name}/{s3_path}")
