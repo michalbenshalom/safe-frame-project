@@ -12,7 +12,7 @@ def root():
     try:
         if RELOAD_DATASET:
             process_and_validate_videos()
-        result = run_models_pipeline(MODEL_TYPE)
+        result = run_models_pipeline(MODEL_TYPE, True)
         if result is None:
             return {"error": "run_models_pipeline returned None. Check your model training pipeline."}
         return {

@@ -11,23 +11,26 @@ class ResNetModelWrapper(BaseModelWrapper):
             num_labels=CONFIG["num_classes"],
             ignore_mismatched_sizes=True
         )
-        if hasattr(model, 'fc'):
-            model.fc = nn.Linear(model.fc.in_features, CONFIG["num_classes"])
-        elif hasattr(model, 'classifier'):
-            model.classifier = nn.Linear(model.classifier.in_features, CONFIG["num_classes"])
-        else:
-            raise ValueError("Unknown model structure")       
+        try:
+            in_features = model.classifier[1].in_features  # אם זו Sequential
+            model.classifier[1] = nn.Linear(in_features, CONFIG["num_classes"])
+        except (AttributeError, IndexError, TypeError):
+            try:
+                in_features = model.classifier.in_features  # אם זו Linear ישירה
+                model.classifier = nn.Linear(in_features, CONFIG["num_classes"])
+            except AttributeError:
+                model.fc = nn.Linear(model.fc.in_features, CONFIG["num_classes"])  # לגיבוי
         return model
 
+
     def preprocess(self, inputs, labels, device):
-        inputs, labels = inputs.to(device), labels.to(device)
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
         if inputs.ndim == 3:
-            inputs = inputs.unsqueeze(0)
-        if labels.ndim == 0:
-            labels = labels.unsqueeze(0)
-        if labels.ndim == 1:
-            labels = labels.unsqueeze(1)
-        labels = labels.float()
+            inputs = inputs.unsqueeze(0)  
+
+        labels = labels.view(-1, 1).float()
         return inputs, labels
 
     def forward_pass(self, inputs):

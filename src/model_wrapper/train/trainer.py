@@ -1,25 +1,17 @@
 import copy
 from datetime import datetime
-import os
-from torch import nn, optim
 import torch
-from tqdm import tqdm
-import io
-import boto3
+from torch import optim
 from torch.utils.tensorboard import SummaryWriter
-from dotenv import load_dotenv
+from tqdm import tqdm
+
 from model_wrapper.models.base_model_wrapper import BaseModelWrapper
 from src.config import MODEL_TYPE
-from ..models.losses.loss_factory import get_loss_fn
-from src.data_management.s3_manager import AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_BUCKET_NAME
-from src.utils.model_saver import save_best_model, save_train_history
+from src.utils.s3_model_manager import S3ModelManager
 from src.utils.logger import get_logger
 
-load_dotenv()
-AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
-AWS_SECRET_KEY = os.getenv("AWS_SECRET_KEY")
-AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 logger = get_logger()
+s3_manager = S3ModelManager()  
 
 
 def train(model_wrapper: BaseModelWrapper, train_loader, val_loader, config):
@@ -28,7 +20,7 @@ def train(model_wrapper: BaseModelWrapper, train_loader, val_loader, config):
     lr = config.get("learning_rate", 2e-5)
     patience = config.get("early_stopping_patience", 3)
     log_dir = config.get("tensorboard_log_dir", "./runs")
-    filename = model_wrapper.generate_model_filename()
+    filename = model_wrapper.get_best_model_filename()
     s3_path = f"Models/{MODEL_TYPE}/{filename}"
 
     model_wrapper.model.to(device)
@@ -68,14 +60,8 @@ def train(model_wrapper: BaseModelWrapper, train_loader, val_loader, config):
             best_model_state = copy.deepcopy(model_wrapper.model.state_dict())
 
             try:
-                save_best_model(
-                    model_state_dict=best_model_state,
-                    bucket_name=AWS_BUCKET_NAME,
-                    s3_path=s3_path,
-                    aws_access_key=AWS_ACCESS_KEY,
-                    aws_secret_key=AWS_SECRET_KEY
-                )
-                logger.info(f"Saved best model to s3://{AWS_BUCKET_NAME}/{s3_path} (Val Loss={val_loss:.4f})")
+                s3_manager.save_model(best_model_state, s3_path)
+                logger.info(f"Saved best model to s3://{s3_manager.bucket_name}/{s3_path} (Val Loss={val_loss:.4f})")
                 epochs_without_improvement = 0
             except Exception as e:
                 logger.error(f"Failed to save model to S3: {e}")
@@ -91,7 +77,7 @@ def train(model_wrapper: BaseModelWrapper, train_loader, val_loader, config):
         logger.info(f"Loaded best model (Val Loss={best_val_loss:.4f})")
 
     writer.close()
-    save_train_history(history, config=config)
+    s3_manager.save_history(history, config.get("checkpoint_dir", "./checkpoints/"))
 
     return {
         "model": model_wrapper.model,
@@ -103,12 +89,9 @@ def train(model_wrapper: BaseModelWrapper, train_loader, val_loader, config):
 
 
 def run_epoch(model_wrapper: BaseModelWrapper, dataloader, criterion, device, epoch, total_epochs,
-              is_train: bool,optimizer=None):
+              is_train: bool, optimizer=None):
     mode = "Train" if is_train else "Val"
-    if is_train:
-        model_wrapper.model.train()
-    else:
-        model_wrapper.model.eval()
+    model_wrapper.model.train() if is_train else model_wrapper.model.eval()
 
     total_loss, correct, total = 0.0, 0, 0
 
@@ -131,9 +114,8 @@ def run_epoch(model_wrapper: BaseModelWrapper, dataloader, criterion, device, ep
             preds = model_wrapper.predict(outputs)
             correct += (preds == labels).sum().item()
             total += labels.numel() if preds.shape == labels.shape else preds.shape[0]
-            
-            loss_value = loss.detach().cpu().item()
-            progress_bar.set_postfix(batch_loss=loss_value)
+
+            progress_bar.set_postfix(batch_loss=loss.detach().cpu().item())
 
     avg_loss = total_loss / len(dataloader)
     accuracy = correct / total * 100
