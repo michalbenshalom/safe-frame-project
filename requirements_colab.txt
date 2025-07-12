@@ -1,0 +1,11 @@
+torch
+transformers
+boto3
+opencv-python
+pandas
+scikit-learn
+tqdm
+fastapi
+python-dotenv
+loguru
+Pillow
