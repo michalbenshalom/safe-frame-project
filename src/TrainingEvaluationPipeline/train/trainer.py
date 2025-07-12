@@ -60,7 +60,7 @@ def train(model_wrapper: BaseModelWrapper, train_loader, val_loader, config):
             best_model_state = copy.deepcopy(model_wrapper.model.state_dict())
 
             try:
-                s3_manager.save_model(best_model_state, s3_path)
+                #s3_manager.save_model(best_model_state, s3_path)
                 logger.info(f"Saved best model to s3://{s3_manager.bucket_name}/{s3_path} (Val Loss={val_loss:.4f})")
                 epochs_without_improvement = 0
             except Exception as e:
@@ -76,8 +76,9 @@ def train(model_wrapper: BaseModelWrapper, train_loader, val_loader, config):
         model_wrapper.model.load_state_dict(best_model_state)
         logger.info(f"Loaded best model (Val Loss={best_val_loss:.4f})")
 
+    
     writer.close()
-    s3_manager.save_history(history, config.get("checkpoint_dir", "./checkpoints/"))
+    #s3_manager.save_history(history, config.get("checkpoint_dir", "./checkpoints/"))
 
     return {
         "model": model_wrapper.model,

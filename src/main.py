@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from src.data_management.data_pipeline import process_and_validate_videos
-from src.model_wrapper.pipeline import run_models_pipeline
+from TrainingEvaluationPipeline.pipeline import run_models_pipeline
 from src.config import RELOAD_DATASET, MODEL_TYPE
 #from src.model_wrapper.train.test_only import test_model
 
@@ -12,7 +12,7 @@ def root():
     try:
         if RELOAD_DATASET:
             process_and_validate_videos()
-        result = run_models_pipeline(MODEL_TYPE, True)
+        result = run_models_pipeline()
         if result is None:
             return {"error": "run_models_pipeline returned None. Check your model training pipeline."}
         return {
