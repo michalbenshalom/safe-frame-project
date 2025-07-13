@@ -1,5 +1,5 @@
 from loguru import logger
-from TrainingEvaluationPipeline.Test.test_stage import test_model
+from training_evaluation.Test.test_stage import test_model
 from model_wrapper.data.image_utils import load_dataset
 from model_wrapper.data.dataset_loader import split_dataset
 from src.config import CONFIG, MODEL_TYPE, USE_EXISTING_MODEL

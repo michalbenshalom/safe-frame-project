@@ -1,7 +1,7 @@
 
 import torch
 from torch.utils.data import DataLoader
-from TrainingEvaluationPipeline.Evaluation.evaluation import evaluate_model
+from training_evaluation.Evaluation.evaluation import evaluate_model
 from src.config import MODEL_TYPE, CONFIG
 from utils.ModelsTypes import MODEL_WRAPPERS
 
