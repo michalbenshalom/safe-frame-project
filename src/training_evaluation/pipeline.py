@@ -16,9 +16,8 @@ def run_models_pipeline():
     Returns:
         Tuple[test_dataset, model]: Evaluation dataset and the model instance.
     """
-    test_dataset, trained_model = get_or_train_model()
-    model = trained_model["model"]
-    test_model(model, test_dataset)
+    test_dataset, trained_model = get_or_train_model() 
+    return test_model(trained_model, test_dataset)
 
 
 def get_or_train_model():
@@ -40,7 +39,7 @@ def get_or_train_model():
             s3_path = f"Models/{MODEL_TYPE}/{filename}"
             s3_manager.load_model(model_wrapper.model, s3_path)
             logger.info(f"Loaded model from s3://{s3_path}")
-            return {"model": model_wrapper.model, "s3_path": s3_path, "loaded_from_s3": True}
+            return model_wrapper.model
         except Exception as e:
             logger.warning(f"Failed to load existing model. Training a new one. Error: {e}")
  
@@ -49,4 +48,4 @@ def get_or_train_model():
     model_wrapper = MODEL_WRAPPERS[MODEL_TYPE]() 
 
     trained_model = train(model_wrapper, train_dataset, val_dataset, CONFIG)
-    return test_dataset, trained_model
+    return test_dataset, trained_model["model"]
