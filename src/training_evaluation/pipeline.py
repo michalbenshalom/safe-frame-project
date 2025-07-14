@@ -16,7 +16,7 @@ def run_models_pipeline():
     Returns:
         Tuple[test_dataset, model]: Evaluation dataset and the model instance.
     """
-  test_dataset, trained_model = get_or_train_model() 
+    test_dataset, trained_model = get_or_train_model() 
     return test_model(trained_model, test_dataset)
 
 def get_or_train_model():
