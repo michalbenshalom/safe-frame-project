@@ -2,7 +2,7 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 import torch
 import pandas as pd
 import os
-from src.utils.logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger()
 
