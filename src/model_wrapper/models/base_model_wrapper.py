@@ -20,6 +20,15 @@ class BaseModelWrapper(ABC):
     def forward_pass(self, inputs):
         pass
     
+    def set_model(self, model):
+        if model is None:
+            raise ValueError("set_model: Received model is None.")
+
+        from torch.nn import Module
+        if not isinstance(model, Module):
+            raise TypeError(f"set_model: Expected torch.nn.Module, got {type(model)}")
+        self.model = model
+
     def init_criterion(self):
         loss_type = self.config.get("loss_type", "bce")
         loss_params = self.config.get("loss_params", {})

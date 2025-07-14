@@ -12,7 +12,11 @@ def evaluate_model(model_wrapper, test_loader, device, save_csv_path: str = None
     all_labels = []
 
     with torch.no_grad():
+        print(f"Evaluating batch with {len(test_loader)} images")
+        i = 0
         for images, labels in test_loader:
+            i = i+1
+            print(f"Evaluating batch index {i} , images = {len(images)}")
             images, labels = images.to(device), labels.to(device)
             outputs = model_wrapper.forward_pass(images)
             preds = (torch.sigmoid(outputs) > 0.5).int()
