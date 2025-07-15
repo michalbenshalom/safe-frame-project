@@ -2,8 +2,10 @@ RELOAD_DATASET = False
 MODEL_TYPE = "VIT"      #  "VIT"  או "ResNet"
 USE_EXISTING_MODEL = False
 CONFIG = {
+    "val_size" : 0.005,  # 0.1
+    "test_size": 0.99,   # 0.3
     "batch_size": 32, 
-    "epochs": 1,
+    "epochs": 2,
     "learning_rate": 2e-5,
     "model_names": ["resnet", "vit", "blip", "llava"],
     "dataset_path": "./data/processed/",

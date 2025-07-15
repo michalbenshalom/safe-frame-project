@@ -1,8 +1,10 @@
 import random
 from sklearn.model_selection import train_test_split
+
+from config import CONFIG
 from .image_dataset import ImageDataset
 
-def split_dataset(image_paths, labels, val_size=0.005, test_size=0.99, random_seed=42):
+def split_dataset(image_paths, labels, random_seed=42):
     """
     Loads image paths & labels, shuffles, splits into train/val/test,
     and returns ImageDataset instances.
@@ -14,6 +16,8 @@ def split_dataset(image_paths, labels, val_size=0.005, test_size=0.99, random_se
     image_paths, labels = zip(*combined)
 
     # First split: Train vs Temp (Val+Test)
+    val_size = CONFIG["val_size"]
+    test_size = CONFIG["test_size"]
     val_test_size = val_size + test_size
     train_paths, temp_paths, train_labels, temp_labels = train_test_split(
         image_paths, labels, test_size=val_test_size, random_state=random_seed
