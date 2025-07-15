@@ -27,7 +27,7 @@ def get_or_train_model():
     """
     if MODEL_TYPE not in MODEL_WRAPPERS:
         raise ValueError(f"Unsupported model type: {MODEL_TYPE}")
-    
+      print(f"=== dataset_path {CONFIG["dataset_path"]} ===")
     image_paths, labels = load_dataset(CONFIG["dataset_path"])
     train_dataset, val_dataset, test_dataset = split_dataset(image_paths, labels)
 
