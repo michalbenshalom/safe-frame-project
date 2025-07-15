@@ -8,17 +8,19 @@ from model_wrapper.models.base_model_wrapper import BaseModelWrapper
 from config import MODEL_TYPE
 from utils.s3_model_manager import S3ModelManager
 from utils.logger import get_logger
+from utils.ModelsTypes import MODEL_WRAPPERS
 
 logger = get_logger()
 s3_manager = S3ModelManager()  
 
 
-def train(model_wrapper: BaseModelWrapper, train_loader, val_loader, config):
+def train(train_loader, val_loader, config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     epochs = config.get("epochs", 5)
     lr = config.get("learning_rate", 2e-5)
     patience = config.get("early_stopping_patience", 3)
     log_dir = config.get("tensorboard_log_dir", "./runs")
+    model_wrapper = MODEL_WRAPPERS[MODEL_TYPE]() 
     filename = model_wrapper.get_best_model_filename()
     s3_path = f"Models/{MODEL_TYPE}/{filename}"
 
@@ -45,6 +47,7 @@ def train(model_wrapper: BaseModelWrapper, train_loader, val_loader, config):
         writer.add_scalar("Accuracy/Train", train_acc, epoch)
         writer.add_scalar("Accuracy/Val", val_acc, epoch)
 
+        #michalbs : add to writer 
         history.append({
             "epoch": epoch + 1,
             "train_loss": train_loss,
@@ -83,8 +86,7 @@ def train(model_wrapper: BaseModelWrapper, train_loader, val_loader, config):
         "model": model_wrapper.model,
         "best_val_loss": best_val_loss,
         "best_val_accuracy": best_val_acc,
-        "train_history": history,
-        "s3_path": s3_path
+        "train_history": history
     }
 
 

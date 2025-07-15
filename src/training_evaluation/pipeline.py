@@ -4,8 +4,9 @@ from model_wrapper.data.image_utils import load_dataset
 from model_wrapper.data.dataset_loader import split_dataset
 from config import CONFIG, MODEL_TYPE, USE_EXISTING_MODEL
 from utils.ModelsTypes import MODEL_WRAPPERS
-from training_evaluation.train.trainer import train
+from .train.trainer import train
 from utils.s3_model_manager import S3ModelManager
+from torch.utils.tensorboard import SummaryWriter
 
 s3_manager = S3ModelManager()
 
@@ -17,7 +18,31 @@ def run_models_pipeline():
         Tuple[test_dataset, model]: Evaluation dataset and the model instance.
     """
     test_dataset, trained_model = get_or_train_model() 
-    return test_model(trained_model, test_dataset)
+    test_result =  test_model(trained_model, test_dataset)
+    log_dir = CONFIG.get("tensorboard_log_dir", "./runs")
+    writer = SummaryWriter(log_dir=log_dir)
+    final_step = CONFIG.get("epochs", 5)
+    writer.add_scalar("Test/Accuracy", test_result["accuracy"] * 100, final_step)
+    writer.add_scalar("Test/Precision", test_result["precision"] * 100, final_step)
+    writer.add_scalar("Test/Recall", test_result["recall"] * 100, final_step)
+    writer.add_scalar("Test/F1_Score", test_result["f1_score"] * 100, final_step)
+
+    writer.add_hparams(
+        {
+            "lr": CONFIG["learning_rate"],
+            "epochs": CONFIG["epochs"],
+            "model": MODEL_TYPE
+        },
+        {
+            "accuracy": test_result["accuracy"],
+            "f1_score": test_result["f1_score"],
+            "precision": test_result["precision"],
+            "recall": test_result["recall"]
+        }
+    )
+    writer.close()
+    return test_result
+
 
 def get_or_train_model():
     """
@@ -38,13 +63,11 @@ def get_or_train_model():
             s3_path = f"Models/{MODEL_TYPE}/{filename}"
             s3_manager.load_model(model_wrapper.model, s3_path)
             logger.info(f"Loaded model from s3://{s3_path}")
-            return model_wrapper.model
+            return test_dataset, model_wrapper.model
         except Exception as e:
             logger.warning(f"Failed to load existing model. Training a new one. Error: {e}")
  
 
     print(f"=== Training {MODEL_TYPE} ===")
-    model_wrapper = MODEL_WRAPPERS[MODEL_TYPE]() 
-
-    trained_model = train(model_wrapper, train_dataset, val_dataset, CONFIG)
+    trained_model = train(train_dataset, val_dataset, CONFIG)
     return test_dataset, trained_model["model"]
