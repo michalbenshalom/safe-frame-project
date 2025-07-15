@@ -6,7 +6,7 @@ CONFIG = {
     "epochs": 1,
     "learning_rate": 2e-5,
     "model_names": ["resnet", "vit", "blip", "llava"],
-    "dataset_path": "./data/processed/",
+    "dataset_path": "/content/drive/MyDrive/ml_project/safe-frame-project/data/processed",
     "num_classes": 1,
     "early_stopping_patience": 3,
     "save_dir": "C:/Users/MichalBenShalom/OneDrive - Infraedge LTD/Desktop/הורדות/course/Project/trained_model/",  
