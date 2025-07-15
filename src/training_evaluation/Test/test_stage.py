@@ -28,6 +28,7 @@ def test_model(model, test_dataset=None, weights_path=None,):
 
     # Evaluate
     eval_result = evaluate_model(model_wrapper, test_loader, device)
+    
     return eval_result
 
 
