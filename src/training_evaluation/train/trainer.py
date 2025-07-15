@@ -4,7 +4,7 @@ import torch
 from torch import optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-
+from model_wrapper.models.base_model_wrapper import BaseModelWrapper
 from config import MODEL_TYPE
 from utils.s3_model_manager import S3ModelManager
 from utils.logger import get_logger
