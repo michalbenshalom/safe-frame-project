@@ -7,8 +7,6 @@ def split_dataset(image_paths, labels, val_size=0.005, test_size=0.99, random_se
     Loads image paths & labels, shuffles, splits into train/val/test,
     and returns ImageDataset instances.
     """
-    print(f"image_paths: {(image_paths)}")
-
     # Shuffle
     combined = list(zip(image_paths, labels))
     random.seed(random_seed)
