@@ -2,10 +2,10 @@ RELOAD_DATASET = False
 MODEL_TYPE = "VIT"      #  "VIT"  או "ResNet"
 USE_EXISTING_MODEL = False
 CONFIG = {
-    "val_size" : 0.005,  # 0.1
-    "test_size": 0.99,   # 0.3
+    "val_size" : 0.05,  # 0.1
+    "test_size": 0.1,   # 0.3
     "batch_size": 32, 
-    "epochs": 2,
+    "epochs": 5,
     "learning_rate": 2e-5,
     "model_names": ["resnet", "vit", "blip", "llava"],
     "dataset_path": "/content/drive/MyDrive/ml_project/safe-frame-project/data/processed",
