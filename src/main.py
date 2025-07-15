@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-from src.data_management.data_pipeline import process_and_validate_videos
+from data_management.data_pipeline import process_and_validate_videos
 from training_evaluation.pipeline import run_models_pipeline
-from src.config import RELOAD_DATASET, MODEL_TYPE
+from config import RELOAD_DATASET, MODEL_TYPE
 #from src.model_wrapper.train.test_only import test_model
 
 

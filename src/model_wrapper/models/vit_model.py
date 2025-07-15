@@ -1,6 +1,6 @@
 from torch import nn
 from transformers import ViTForImageClassification
-from src.config import CONFIG
+from config import CONFIG
 from .base_model_wrapper import BaseModelWrapper
 
 class ViTModelWrapper(BaseModelWrapper):

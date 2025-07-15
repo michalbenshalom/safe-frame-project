@@ -5,10 +5,9 @@ from torch import optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from model_wrapper.models.base_model_wrapper import BaseModelWrapper
-from src.config import MODEL_TYPE
-from src.utils.s3_model_manager import S3ModelManager
-from src.utils.logger import get_logger
+from config import MODEL_TYPE
+from utils.s3_model_manager import S3ModelManager
+from utils.logger import get_logger
 
 logger = get_logger()
 s3_manager = S3ModelManager()  
