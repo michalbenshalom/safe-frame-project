@@ -1,15 +1,25 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Query
 from inference_pipeline.pipeline import predict_from_video_file
 from src.data_management.data_pipeline import process_and_validate_videos
 from training_evaluation.pipeline import run_models_pipeline
-from src.config import RELOAD_DATASET, MODEL_TYPE
+from src.config import RELOAD_DATASET, MODEL_TYPE, CONFIG
 
 
 app = FastAPI()
  
 @app.get("/")
-def root():
+def root(
+    dataset_percent: float = Query(5, description="dataset percent"),
+    val_size: float = Query(0.005, description="Validation set size"),
+    test_size: float = Query(0.99, description="Test set size"),
+    epochs: int = Query(2, description="Number of epochs")
+):
     try:
+        CONFIG["val_size"] = val_size
+        CONFIG["test_size"] = test_size
+        CONFIG["epochs"] = epochs
+        CONFIG["dataset_percent"] = dataset_percent
+        
         if RELOAD_DATASET:
             process_and_validate_videos()
         result = run_models_pipeline()
