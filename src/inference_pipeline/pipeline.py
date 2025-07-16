@@ -1,14 +1,14 @@
-from tkinter import Image
+from PIL import Image
 from fastapi import File, UploadFile
 from loguru import logger
-from matplotlib import transforms
 import torch
-
+from torchvision import transforms
 from config import MODEL_TYPE
-from data_management import s3_manager
 from data_management.loader import video_to_frames
 from utils.ModelsTypes import MODEL_WRAPPERS
+from src.utils.s3_model_manager import S3ModelManager
 
+s3_manager = S3ModelManager()
 
 async def predict_from_video_file(file: UploadFile = File(...)):
     try:
@@ -36,14 +36,14 @@ async def predict_from_video_file(file: UploadFile = File(...)):
         # חיזוי לכל פריים
         preds = []
         for _, frame in frames:
-            pred = predict_single_frame(frame, model_wrapper.model, model_wrapper, device)
+            pred = predict_single_frame(frame, model_wrapper, device)
             preds.append(pred)
 
-        avg_pred = float(sum(preds) / len(preds))
+        attack_detected = is_attack_detected(preds)
+
         return {
-            "num_frames": len(preds),
-            "avg_prediction": avg_pred,
-            "frame_predictions": preds
+            "attack_detected": attack_detected,
+            "num_frames": len(preds)
         }
 
     except Exception as e:
@@ -51,6 +51,11 @@ async def predict_from_video_file(file: UploadFile = File(...)):
         print(traceback.format_exc())
         return {"error": str(e)}
     
+def is_attack_detected(preds, threshold=0.5):
+    """
+    מחזיר True אם יש לפחות פריים אחד שסיווגו מעל הסף.
+    """
+    return any(pred >= threshold for pred in preds)
 
 def predict_single_frame(image, model_wrapper, device):
     """
