@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
+from inference_pipeline.pipeline import predict_from_video_file
 from src.data_management.data_pipeline import process_and_validate_videos
 from training_evaluation.pipeline import run_models_pipeline
 from src.config import RELOAD_DATASET, MODEL_TYPE
@@ -30,6 +31,16 @@ def root():
         print(traceback.format_exc())
         return {"error": str(e)}
 
+@app.post("/predict_video")
+async def predict_video(file: UploadFile = File(...)):
+    try:
+        result = await predict_from_video_file(file)
+        return result
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return {"error": str(e)}
+
 @app.get("/metrics")
 def metrics():
     # weights = "resnet18_trained.pth" if MODEL_TYPE.lower() == "resnet" else "vit_b16_trained.pth"
@@ -42,4 +53,3 @@ def metrics():
     # except Exception as e:
     #     return {"error": str(e)}
     return {"message": "Metrics endpoint is not implemented yet."}
-

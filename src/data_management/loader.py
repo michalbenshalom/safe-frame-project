@@ -31,7 +31,7 @@ def video_to_frames(video_bytes, fps_interval=1):
             frames.append((frame_idx, frame))
 
         frame_idx += 1
-
+        
     cap.release()
     os.remove(tmp_path)
     return frames
