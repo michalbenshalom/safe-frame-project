@@ -21,4 +21,24 @@ class ImageDataset(Dataset):
         label = torch.tensor(self.labels[idx], dtype=torch.float32)        
         return image, label
 
+class InMemoryImageDataset(Dataset):
+    def __init__(self, images, transform=None):
+        self.images = images  # list of numpy arrays or PIL Images
+        self.transform = transform or transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor()
+        ])
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        image = self.images[idx]
+        # Convert numpy array to PIL Image if needed
+        if not isinstance(image, Image.Image):
+            image = Image.fromarray(image)
+        image = image.convert("RGB")
+        image = self.transform(image)
+        return image
+
 
