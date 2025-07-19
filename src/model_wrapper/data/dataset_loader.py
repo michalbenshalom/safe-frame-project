@@ -1,7 +1,7 @@
 import random
 from sklearn.model_selection import train_test_split
 
-from config import CONFIG
+from src.config import CONFIG
 from .image_dataset import ImageDataset
 
 def split_dataset(image_paths, labels, random_seed=42):
@@ -13,6 +13,9 @@ def split_dataset(image_paths, labels, random_seed=42):
     combined = list(zip(image_paths, labels))
     random.seed(random_seed)
     random.shuffle(combined)
+
+    limit = int(len(combined) * CONFIG.get("dataset_percent")/100)
+    combined = combined[:limit]
     image_paths, labels = zip(*combined)
 
     # First split: Train vs Temp (Val+Test)
