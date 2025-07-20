@@ -7,21 +7,25 @@ from utils.ModelsTypes import MODEL_WRAPPERS
 from .train.trainer import train
 from utils.s3_model_manager import S3ModelManager
 from torch.utils.tensorboard import SummaryWriter
+from collections import defaultdict
+import random
 
 s3_manager = S3ModelManager()
 
 
 def run_models_pipeline():
     """
-    Runs the full pipeline, returning test dataset and the trained or loaded model.
-    Returns:
-        Tuple[test_dataset, model]: Evaluation dataset and the model instance.
+    Runs the full training + evaluation pipeline.
+    Returns: test results dictionary
     """
-    test_dataset, trained_model = get_or_train_model() 
-    test_result =  test_model(trained_model, test_dataset)
+    test_dataset, trained_model = get_or_train_model()
+    test_result = test_model(trained_model, test_dataset)
+
+    # Log to TensorBoard
     log_dir = CONFIG.get("tensorboard_log_dir", "./runs")
     writer = SummaryWriter(log_dir=log_dir)
     final_step = CONFIG.get("epochs", 5)
+
     writer.add_scalar("Test/Accuracy", test_result["accuracy"] * 100, final_step)
     writer.add_scalar("Test/Precision", test_result["precision"] * 100, final_step)
     writer.add_scalar("Test/Recall", test_result["recall"] * 100, final_step)
@@ -41,22 +45,48 @@ def run_models_pipeline():
         }
     )
     writer.close()
+
     return test_result
 
 
 def get_or_train_model():
     """
-    Load model from S3 if USE_EXISTING_MODEL is True, otherwise train a new one.
-    Returns:
-        model_wrapper: An instance of ViTModelWrapper or ResNetModelWrapper with a trained or loaded model.
+    Load model if exists, otherwise train a new one. Returns test_dataset and the trained model.
     """
     if MODEL_TYPE not in MODEL_WRAPPERS:
         raise ValueError(f"Unsupported model type: {MODEL_TYPE}")
-      print(f"=== dataset_path {CONFIG["dataset_path"]} ===")
+
+    # Load all images & labels
     image_paths, labels = load_dataset(CONFIG["dataset_path"])
+
+    # ✂️ Balanced sampling if max_train_samples is set
+    max_samples = CONFIG.get("max_train_samples")
+    if max_samples:
+        from collections import defaultdict
+
+        # Group by class
+        samples_by_class = defaultdict(list)
+        for path, label in zip(image_paths, labels):
+            samples_by_class[label].append((path, label))
+
+        num_classes = len(samples_by_class)
+        per_class_count = max_samples // num_classes
+        sampled = []
+
+        for label, items in samples_by_class.items():
+            sampled.extend(random.sample(items, min(per_class_count, len(items))))
+
+        # Unzip
+        image_paths, labels = zip(*sampled)
+        print(f"✂️ Using {len(image_paths)} balanced samples from all classes")
+
+    # Split data
     train_dataset, val_dataset, test_dataset = split_dataset(image_paths, labels)
 
-    model_wrapper = MODEL_WRAPPERS[MODEL_TYPE]()    
+    # Create model wrapper
+    model_wrapper = MODEL_WRAPPERS[MODEL_TYPE]()
+
+    # Load existing model if requested
     if USE_EXISTING_MODEL:
         try:
             filename = model_wrapper.get_best_model_filename()
@@ -66,8 +96,8 @@ def get_or_train_model():
             return test_dataset, model_wrapper.model
         except Exception as e:
             logger.warning(f"Failed to load existing model. Training a new one. Error: {e}")
- 
 
+    # Train new model
     print(f"=== Training {MODEL_TYPE} ===")
     trained_model = train(train_dataset, val_dataset, CONFIG)
     return test_dataset, trained_model["model"]

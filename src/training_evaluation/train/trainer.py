@@ -21,7 +21,8 @@ def train(train_loader, val_loader, config):
     patience = config.get("early_stopping_patience", 3)
     log_dir = config.get("tensorboard_log_dir", "./runs")
     model_wrapper = MODEL_WRAPPERS[MODEL_TYPE]() 
-    filename = model_wrapper.get_best_model_filename()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{MODEL_TYPE}_best_model_{timestamp}.pth"
     s3_path = f"Models/{MODEL_TYPE}/{filename}"
 
     model_wrapper.model.to(device)
@@ -80,7 +81,7 @@ def train(train_loader, val_loader, config):
 
     
     writer.close()
-    s3_manager.save_history(history, config.get("checkpoint_dir", "./checkpoints/"))//michalbs
+    s3_manager.save_history(history, config.get("checkpoint_dir", "./checkpoints/"))
 
     return {
         "model": model_wrapper.model,

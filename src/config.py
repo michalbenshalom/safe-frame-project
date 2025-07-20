@@ -2,8 +2,9 @@ RELOAD_DATASET = False
 MODEL_TYPE = "VIT"      #  "VIT"  או "ResNet"
 USE_EXISTING_MODEL = False
 CONFIG = {
-    "val_size" : 0.05,  # 0.1
-    "test_size": 0.1,   # 0.3
+    "max_train_samples": 1000,
+    "val_size": 0.05,
+    "test_size": 0.1,
     "batch_size": 32, 
     "epochs": 5,
     "learning_rate": 2e-5,
@@ -11,7 +12,7 @@ CONFIG = {
     "dataset_path": "/content/drive/MyDrive/ml_project/safe-frame-project/data/processed",
     "num_classes": 1,
     "early_stopping_patience": 3,
-    "save_dir": "C:/Users/MichalBenShalom/OneDrive - Infraedge LTD/Desktop/הורדות/course/Project/trained_model/",  
+    "save_dir": "/content/drive/MyDrive/ml_project/safe-frame-project/trained_model/",
     "checkpoint_dir": "./checkpoints/",
     "model_hf_names": {
         "vit": "google/vit-base-patch16-224-in21k",
