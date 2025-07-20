@@ -6,7 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from model_wrapper.models.base_model_wrapper import BaseModelWrapper
-from src.config import MODEL_TYPE
+from src.config import CONFIG
 from src.utils.s3_model_manager import S3ModelManager
 from src.utils.logger import get_logger
 from utils.ModelsTypes import MODEL_WRAPPERS
@@ -21,9 +21,9 @@ def train(train_loader, val_loader, config):
     lr = config.get("learning_rate", 2e-5)
     patience = config.get("early_stopping_patience", 3)
     log_dir = config.get("tensorboard_log_dir", "./runs")
-    model_wrapper = MODEL_WRAPPERS[MODEL_TYPE]() 
+    model_wrapper = MODEL_WRAPPERS[CONFIG["model_type"]]() 
     filename = model_wrapper.get_best_model_filename()
-    s3_path = f"Models/{MODEL_TYPE}/{filename}"
+    s3_path = f"Models/{CONFIG["model_type"]}/{filename}"
 
     model_wrapper.model.to(device)
     criterion = model_wrapper.criterion

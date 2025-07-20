@@ -3,7 +3,7 @@ from fastapi import File, UploadFile
 from loguru import logger
 import torch
 from torchvision import transforms
-from config import MODEL_TYPE
+from config import CONFIG
 from data_management.loader import video_to_frames
 from utils.ModelsTypes import MODEL_WRAPPERS
 from src.utils.s3_model_manager import S3ModelManager
@@ -19,12 +19,12 @@ async def predict_from_video_file(file: UploadFile = File(...)):
         frames = video_to_frames(video_bytes, fps_interval=1)
         if not frames:
             return {"error": "No frames extracted from video."}
-        model_wrapper = MODEL_WRAPPERS[MODEL_TYPE]()  
+        model_wrapper = MODEL_WRAPPERS[CONFIG["model_type"]]()  
         
         # טען את המודל
         try:
             filename = model_wrapper.get_best_model_filename()
-            s3_path = f"Models/{MODEL_TYPE}/{filename}"
+            s3_path = f"Models/{CONFIG["model_type"]}/{filename}"
             s3_manager.load_model(model_wrapper.model, s3_path)
         except Exception as e:
             logger.warning(f"Failed to load existing model. Training a new one. Error: {e}")
