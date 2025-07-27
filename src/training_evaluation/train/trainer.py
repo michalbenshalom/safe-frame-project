@@ -15,7 +15,7 @@ logger = get_logger()
 s3_manager = S3ModelManager()  
 
 
-def train(train_loader, val_loader, config):
+def train(train_loader, val_loader, config, initial_model=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     epochs = config.get("epochs", 5)
     lr = config.get("learning_rate", 2e-5)
@@ -23,12 +23,29 @@ def train(train_loader, val_loader, config):
     log_dir = config.get("tensorboard_log_dir", "./runs")
     model_wrapper = MODEL_WRAPPERS[CONFIG["model_type"]]() 
     filename = model_wrapper.get_best_model_filename()
-    s3_path = f"Models/{CONFIG["model_type"]}/{filename}"
+    s3_path = f"Models/{CONFIG['model_type']}/{filename}"
+
+    if initial_model is not None:
+        model_wrapper.model = initial_model
+        logger.info("Continuing training with existing model")
+    else:
+        logger.info("Starting training with new model")
 
     model_wrapper.model.to(device)
     criterion = model_wrapper.criterion
     optimizer = optim.Adam(model_wrapper.model.parameters(), lr=lr)
     writer = SummaryWriter(log_dir=log_dir)
+
+    # הדפסת פרטי האימון
+    print(f"\n{'='*60}")
+    print(f"Starting Training - Model: {CONFIG['model_type']}")
+    print(f"Device: {device}")
+    print(f"Learning Rate: {lr}")
+    print(f"Epochs: {epochs}")
+    print(f"Batch Size: {config.get('batch_size', 32)}")
+    print(f"Train Samples: {len(train_loader)}")
+    print(f"Val Samples: {len(val_loader)}")
+    print(f"{'='*60}\n")
 
     best_model_state, best_val_loss = None, float('inf')
     best_val_acc = 0.0
@@ -43,6 +60,12 @@ def train(train_loader, val_loader, config):
         val_loss, val_acc = run_epoch(
             model_wrapper, val_loader, criterion, device, epoch, epochs, is_train=False
         )
+        
+        # הדפסות מפורטות של התקדמות האימון
+        print(f"Epoch [{epoch+1}/{epochs}] - Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%")
+        print(f"Epoch [{epoch+1}/{epochs}] - Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%")
+        print("-" * 60)
+        
         writer.add_scalar("Loss/Train", train_loss, epoch)
         writer.add_scalar("Loss/Val", val_loss, epoch)
         writer.add_scalar("Accuracy/Train", train_acc, epoch)
@@ -79,6 +102,15 @@ def train(train_loader, val_loader, config):
         model_wrapper.model.load_state_dict(best_model_state)
         logger.info(f"Loaded best model (Val Loss={best_val_loss:.4f})")
 
+    # הדפסת סיכום האימון
+    print(f"\n{'='*60}")
+    print(f"Training Completed - Model: {CONFIG['model_type']}")
+    print(f"Best Validation Loss: {best_val_loss:.4f}")
+    print(f"Best Validation Accuracy: {best_val_acc:.2f}%")
+    print(f"Total Epochs Trained: {len(history)}")
+    if epochs_without_improvement >= patience:
+        print(f"Training stopped early due to no improvement for {patience} epochs")
+    print(f"{'='*60}\n")
     
     writer.close()
     #s3_manager.save_history(history, config.get("checkpoint_dir", "./checkpoints/"))//michalbs
@@ -97,9 +129,10 @@ def run_epoch(model_wrapper: BaseModelWrapper, dataloader, criterion, device, ep
     model_wrapper.model.train() if is_train else model_wrapper.model.eval()
 
     total_loss, correct, total = 0.0, 0, 0
+    num_batches = len(dataloader)
 
     with tqdm(dataloader, desc=f"[{mode}] Epoch {epoch+1}/{total_epochs}") as progress_bar:
-        for inputs, labels in progress_bar:
+        for batch_idx, (inputs, labels) in enumerate(progress_bar):
             inputs, labels = model_wrapper.preprocess(inputs, labels, device)
 
             if is_train:
@@ -118,8 +151,22 @@ def run_epoch(model_wrapper: BaseModelWrapper, dataloader, criterion, device, ep
             correct += (preds == labels).sum().item()
             total += labels.numel() if preds.shape == labels.shape else preds.shape[0]
 
-            progress_bar.set_postfix(batch_loss=loss.detach().cpu().item())
+            # עדכון progress bar עם מידע מפורט יותר
+            current_loss = loss.detach().cpu().item()
+            current_acc = (preds == labels).sum().item() / labels.numel() * 100 if labels.numel() > 0 else 0
+            progress_bar.set_postfix({
+                'loss': f'{current_loss:.4f}',
+                'acc': f'{current_acc:.2f}%',
+                'batch': f'{batch_idx+1}/{num_batches}'
+            })
 
     avg_loss = total_loss / len(dataloader)
     accuracy = correct / total * 100
+    
+    # הדפסת סיכום epoch
+    print(f"[{mode}] Epoch {epoch+1}/{total_epochs} Summary:")
+    print(f"  Average Loss: {avg_loss:.4f}")
+    print(f"  Accuracy: {accuracy:.2f}%")
+    print(f"  Total Samples: {total}")
+    
     return avg_loss, accuracy

@@ -13,7 +13,6 @@ def test_model(model, test_dataset=None, weights_path=None,):
         raise ValueError(f"Unknown model type: {CONFIG["model_type"]}")
 
     # Load data
-    test_dataset = Subset(test_dataset, list(range(100))) #michalbs
     test_loader = DataLoader(test_dataset, batch_size=CONFIG["batch_size"], shuffle=False)
 
 

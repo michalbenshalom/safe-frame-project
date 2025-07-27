@@ -15,6 +15,7 @@ def root(
     epochs: int = Query(2, description="Number of epochs"),
     model_type: str = Query("RESNET", description="Model type"),
     loss_type: str = Query("bce", description="Loss type"),
+    continue_training: bool = Query(False, description="Continue training existing model from S3"),
 ):
     try:
         CONFIG["model_type"] = model_type
@@ -23,6 +24,7 @@ def root(
         CONFIG["epochs"] = epochs
         CONFIG["dataset_percent"] = dataset_percent
         CONFIG["loss_type"] = loss_type
+        CONFIG["continue_training"] = continue_training
 
         if RELOAD_DATASET:
             process_and_validate_videos()
@@ -30,7 +32,7 @@ def root(
         if result is None:
             return {"error": "run_models_pipeline returned None. Check your model training pipeline."}
         return {
-            "message": f"Training completed using {CONFIG["model_type"]}",
+            "message": f"Training completed using {CONFIG['model_type']}",
             "model": CONFIG["model_type"],
             "metrics": {
                 "accuracy": result.get("accuracy"),

@@ -30,6 +30,7 @@ class ResNetModelWrapper(BaseModelWrapper):
         if inputs.ndim == 3:
             inputs = inputs.unsqueeze(0)  
 
+        # עבור binary classification עם BCE loss - צריך float
         labels = labels.view(-1, 1).float()
         return inputs, labels
 
