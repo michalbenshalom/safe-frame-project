@@ -1,3 +1,4 @@
+# ספריות עיקריות שלכם
 torch
 transformers
 boto3
@@ -9,3 +10,12 @@ fastapi
 python-dotenv
 loguru
 Pillow
+
+# תוספות קריטיות ל-FastAPI והרצה
+uvicorn          # להריץ את FastAPI
+python-multipart # תמיכה ב-upload של קבצים
+aiofiles         # טיפול אסינכרוני בקבצים
+
+# אופציונלי (לטיפול ב-JSON מורכב, ויזואליזציה)
+matplotlib
+tensorboard

@@ -4,11 +4,11 @@ import torch
 from torch import optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-
 from model_wrapper.models.base_model_wrapper import BaseModelWrapper
-from src.config import MODEL_TYPE
-from src.utils.s3_model_manager import S3ModelManager
-from src.utils.logger import get_logger
+from config import MODEL_TYPE
+from config import CONFIG
+from utils.s3_model_manager import S3ModelManager
+from utils.logger import get_logger
 from utils.ModelsTypes import MODEL_WRAPPERS
 
 logger = get_logger()
@@ -18,6 +18,7 @@ s3_manager = S3ModelManager()
 def train(train_loader, val_loader, config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     epochs = config.get("epochs", 5)
+    print(f"[DEBUG] Loaded CONFIG:\nLoss: {CONFIG['loss_type']}\nParams: {CONFIG['loss_params']}")
     lr = config.get("learning_rate", 2e-5)
     patience = config.get("early_stopping_patience", 3)
     log_dir = config.get("tensorboard_log_dir", "./runs")
@@ -63,7 +64,7 @@ def train(train_loader, val_loader, config):
             best_model_state = copy.deepcopy(model_wrapper.model.state_dict())
 
             try:
-                #s3_manager.save_model(best_model_state, s3_path)//michalbs
+                s3_manager.save_model(best_model_state, s3_path)
                 logger.info(f"Saved best model to s3://{s3_manager.bucket_name}/{s3_path} (Val Loss={val_loss:.4f})")
                 epochs_without_improvement = 0
             except Exception as e:
@@ -81,7 +82,7 @@ def train(train_loader, val_loader, config):
 
     
     writer.close()
-    #s3_manager.save_history(history, config.get("checkpoint_dir", "./checkpoints/"))//michalbs
+    s3_manager.save_history(history, config.get("checkpoint_dir", "./checkpoints/"))
 
     return {
         "model": model_wrapper.model,

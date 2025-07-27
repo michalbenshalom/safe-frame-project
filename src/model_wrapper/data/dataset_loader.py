@@ -1,44 +1,70 @@
 import random
 from sklearn.model_selection import train_test_split
-
-from src.config import CONFIG
+from collections import Counter
+from config import CONFIG
 from .image_dataset import ImageDataset
+
+def print_label_distribution(name, labels):
+    counter = Counter(labels)
+    total = len(labels)
+    print(f"\n{name} label distribution:")
+    for label, count in counter.items():
+        percent = 100 * count / total
+        print(f"  Label {label}: {count} ({percent:.1f}%)")
 
 def split_dataset(image_paths, labels, random_seed=42):
     """
-    Loads image paths & labels, shuffles, splits into train/val/test,
-    and returns ImageDataset instances.
+    Shuffle and split dataset into train/val/test with stratification.
+    Returns ImageDataset instances for each split.
     """
-    # Shuffle
     combined = list(zip(image_paths, labels))
     random.seed(random_seed)
     random.shuffle(combined)
 
-    limit = int(len(combined) * CONFIG.get("dataset_percent")/100)
-    combined = combined[:limit]
+    # 💡 שלב בחירה בין limit ל-percent
+    if "limit_dataset" in CONFIG and CONFIG["limit_dataset"] is not None:
+        combined = combined[:min(CONFIG["limit_dataset"], len(combined))]
+        print(f"\n🔹 Using fixed limit of {len(combined)} samples")
+    else:
+        percent = CONFIG.get("dataset_percent", 100)
+        limit = int(len(combined) * percent / 100)
+        combined = combined[:limit]
+        print(f"\n🔹 Using {percent}% of data: {len(combined)} samples")
+
     image_paths, labels = zip(*combined)
 
-    # First split: Train vs Temp (Val+Test)
-    val_size = CONFIG["val_size"]
-    test_size = CONFIG["test_size"]
+    val_size = CONFIG.get("val_size", 0.1)
+    test_size = CONFIG.get("test_size", 0.1)
     val_test_size = val_size + test_size
+
+    # Split: train / val+test
     train_paths, temp_paths, train_labels, temp_labels = train_test_split(
-        image_paths, labels, test_size=val_test_size, random_state=random_seed
+        image_paths, labels,
+        test_size=val_test_size,
+        stratify=labels,
+        random_state=random_seed
     )
 
-    # Second split: Val vs Test
+    # Split: val / test
     val_ratio = val_size / val_test_size
     val_paths, test_paths, val_labels, test_labels = train_test_split(
-        temp_paths, temp_labels, test_size=1 - val_ratio, random_state=random_seed
+        temp_paths, temp_labels,
+        test_size=1 - val_ratio,
+        stratify=temp_labels,
+        random_state=random_seed
     )
 
-    # Create datasets
-    train_dataset = ImageDataset(train_paths, train_labels)
-    val_dataset = ImageDataset(val_paths, val_labels)
-    test_dataset = ImageDataset(test_paths, test_labels)
+    print(f"\n📊 Dataset Sizes:")
+    print(f"Train size: {len(train_paths)}")
+    print(f"Validation size: {len(val_paths)}")
+    print(f"Test size: {len(test_paths)}")
 
-    print(f"Train size: {len(train_dataset)}")
-    print(f"Validation size: {len(val_dataset)}")
-    print(f"Test size: {len(test_dataset)}")
+    print_label_distribution("Train", train_labels)
+    print_label_distribution("Validation", val_labels)
+    print_label_distribution("Test", test_labels)
 
-    return train_dataset, val_dataset, test_dataset
+    return (
+        ImageDataset(train_paths, train_labels, augment=True),
+        ImageDataset(val_paths, val_labels, augment=False),
+        ImageDataset(test_paths, test_labels, augment=False)
+    )

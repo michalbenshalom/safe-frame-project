@@ -7,5 +7,5 @@ from model_wrapper.models.vit_model import ViTModelWrapper
 
 MODEL_WRAPPERS = {
     "VIT": lambda: ViTModelWrapper(CONFIG),
-    "RESNET": lambda: ResNetModelWrapper(CONFIG),
+    "resnet": lambda: ResNetModelWrapper(CONFIG),
 }

@@ -1,8 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, Query
 from inference_pipeline.pipeline import predict_from_video_file
-from src.data_management.data_pipeline import process_and_validate_videos
+from data_management.data_pipeline import process_and_validate_videos
 from training_evaluation.pipeline import run_models_pipeline
-from src.config import RELOAD_DATASET, MODEL_TYPE, CONFIG
+from config import RELOAD_DATASET, MODEL_TYPE, CONFIG
 
 
 app = FastAPI()

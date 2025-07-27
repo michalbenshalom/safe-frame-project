@@ -6,7 +6,7 @@ from torchvision import transforms
 from config import MODEL_TYPE
 from data_management.loader import video_to_frames
 from utils.ModelsTypes import MODEL_WRAPPERS
-from src.utils.s3_model_manager import S3ModelManager
+from utils.s3_model_manager import S3ModelManager
 
 s3_manager = S3ModelManager()
 
