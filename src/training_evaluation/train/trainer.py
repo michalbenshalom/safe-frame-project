@@ -37,6 +37,7 @@ def train(train_loader, val_loader, config, initial_model=None):
     writer = SummaryWriter(log_dir=log_dir)
 
     # הדפסת פרטי האימון
+    # הוסף הדפסה לבדיקת איזון הדאטה
     print(f"\n{'='*60}")
     print(f"Starting Training - Model: {CONFIG['model_type']}")
     print(f"Device: {device}")
@@ -130,6 +131,8 @@ def run_epoch(model_wrapper: BaseModelWrapper, dataloader, criterion, device, ep
 
     total_loss, correct, total = 0.0, 0, 0
     num_batches = len(dataloader)
+    samples_processed = 0
+    log_interval = 500  # הדפסה כל 500 דגימות
 
     with tqdm(dataloader, desc=f"[{mode}] Epoch {epoch+1}/{total_epochs}") as progress_bar:
         for batch_idx, (inputs, labels) in enumerate(progress_bar):
@@ -150,6 +153,19 @@ def run_epoch(model_wrapper: BaseModelWrapper, dataloader, criterion, device, ep
             preds = model_wrapper.predict(outputs)
             correct += (preds == labels).sum().item()
             total += labels.numel() if preds.shape == labels.shape else preds.shape[0]
+            
+            # עדכון מספר הדגימות המעובדות
+            batch_size = inputs.size(0)
+            samples_processed += batch_size
+
+            # הדפסת loss כל 500 דגימות
+            if samples_processed % log_interval < batch_size or batch_idx == num_batches - 1:
+                current_loss = loss.detach().cpu().item()
+                current_acc = (preds == labels).sum().item() / labels.numel() * 100 if labels.numel() > 0 else 0
+                avg_loss_so_far = total_loss / (batch_idx + 1)
+                print(f"[{mode}] Epoch {epoch+1}/{total_epochs} | Samples: {samples_processed} | "
+                      f"Current Loss: {current_loss:.4f} | Avg Loss: {avg_loss_so_far:.4f} | "
+                      f"Current Acc: {current_acc:.2f}%")
 
             # עדכון progress bar עם מידע מפורט יותר
             current_loss = loss.detach().cpu().item()
@@ -157,7 +173,8 @@ def run_epoch(model_wrapper: BaseModelWrapper, dataloader, criterion, device, ep
             progress_bar.set_postfix({
                 'loss': f'{current_loss:.4f}',
                 'acc': f'{current_acc:.2f}%',
-                'batch': f'{batch_idx+1}/{num_batches}'
+                'batch': f'{batch_idx+1}/{num_batches}',
+                'samples': f'{samples_processed}'
             })
 
     avg_loss = total_loss / len(dataloader)

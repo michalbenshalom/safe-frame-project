@@ -1,4 +1,4 @@
-from regex import F
+import torch.nn.functional as F
 import torch
 import torch.nn as nn
 from .base_loss import BaseLoss

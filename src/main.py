@@ -9,22 +9,33 @@ app = FastAPI()
  
 @app.get("/")
 def root(
-    dataset_percent: float = Query(5, description="dataset percent"),
-    val_size: float = Query(0.005, description="Validation set size"),
-    test_size: float = Query(0.99, description="Test set size"),
-    epochs: int = Query(2, description="Number of epochs"),
-    model_type: str = Query("RESNET", description="Model type"),
-    loss_type: str = Query("bce", description="Loss type"),
-    continue_training: bool = Query(False, description="Continue training existing model from S3"),
+    dataset_percent: float = Query(None, description="dataset percent"),
+    val_size: float = Query(None, description="Validation set size"),
+    test_size: float = Query(None, description="Test set size"),
+    epochs: int = Query(None, description="Number of epochs"),
+    model_type: str = Query(None, description="Model type"),
+    loss_type: str = Query(None, description="Loss type"),
+    continue_training: bool = Query(None, description="Continue training existing model from S3"),
+    train_strategy: str = Query(None, description="Training strategy: 'full' or 'top_layers'"),
 ):
     try:
-        CONFIG["model_type"] = model_type
-        CONFIG["val_size"] = val_size
-        CONFIG["test_size"] = test_size
-        CONFIG["epochs"] = epochs
-        CONFIG["dataset_percent"] = dataset_percent
-        CONFIG["loss_type"] = loss_type
-        CONFIG["continue_training"] = continue_training
+        # עדכון CONFIG רק אם הפרמטר נשלח (לא None)
+        if model_type is not None:
+            CONFIG["model_type"] = model_type
+        if val_size is not None:
+            CONFIG["val_size"] = val_size
+        if test_size is not None:
+            CONFIG["test_size"] = test_size
+        if epochs is not None:
+            CONFIG["epochs"] = epochs
+        if dataset_percent is not None:
+            CONFIG["dataset_percent"] = dataset_percent
+        if loss_type is not None:
+            CONFIG["loss_type"] = loss_type
+        if continue_training is not None:
+            CONFIG["continue_training"] = continue_training
+        if train_strategy is not None:
+            CONFIG["train_strategy"] = train_strategy
 
         if RELOAD_DATASET:
             process_and_validate_videos()
