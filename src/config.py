@@ -6,7 +6,7 @@ CONFIG = {
     "test_size": 0.99,   # 0.3
     "batch_size": 32, 
     "epochs": 2,
-    "limit_dataset":2000,
+    "limit_dataset":5000,
     "dataset_percent": 5,
     "learning_rate": 2e-5,
     "model_names": ["resnet", "vit", "blip", "llava"],
