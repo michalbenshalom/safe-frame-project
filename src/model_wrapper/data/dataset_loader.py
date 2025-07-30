@@ -54,17 +54,26 @@ def split_dataset(image_paths, labels, random_seed=42):
         random_state=random_seed
     )
 
-    print(f"\n📊 Dataset Sizes:")
-    print(f"Train size: {len(train_paths)}")
-    print(f"Validation size: {len(val_paths)}")
-    print(f"Test size: {len(test_paths)}")
+    # 🔁 Augmentation toggle
+    use_augmentation = CONFIG.get("use_augmentation", False)
 
+    # 📦 Create dataset objects
+    train_dataset = ImageDataset(train_paths, train_labels, use_augmentation=use_augmentation, is_train=True)
+    val_dataset = ImageDataset(val_paths, val_labels, use_augmentation=False, is_train=False)
+    test_dataset = ImageDataset(test_paths, test_labels, use_augmentation=False, is_train=False)
+
+    # 📊 Print dataset sizes
+    print(f"\n📊 Dataset Sizes:")
+    print(f"Train size: {len(train_dataset)}")
+    print(f"Validation size: {len(val_dataset)}")
+    print(f"Test size: {len(test_dataset)}")
+
+    if use_augmentation:
+        print("✅ Using data augmentation for training")
+
+    # 🧮 Print label distribution
     print_label_distribution("Train", train_labels)
     print_label_distribution("Validation", val_labels)
     print_label_distribution("Test", test_labels)
 
-    return (
-        ImageDataset(train_paths, train_labels, augment=True),
-        ImageDataset(val_paths, val_labels, augment=False),
-        ImageDataset(test_paths, test_labels, augment=False)
-    )
+    return train_dataset, val_dataset, test_dataset

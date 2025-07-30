@@ -11,15 +11,15 @@ class ResNetModelWrapper(BaseModelWrapper):
             num_labels=CONFIG["num_classes"],
             ignore_mismatched_sizes=True
         )
-        try:
-            in_features = model.classifier[1].in_features  # אם זו Sequential
+        
+        classifier_module = getattr(model, 'classifier', None)
+        if isinstance(classifier_module, nn.Sequential) and len(classifier_module) > 1:
+            in_features = classifier_module[1].in_features
             model.classifier[1] = nn.Linear(in_features, CONFIG["num_classes"])
-        except (AttributeError, IndexError, TypeError):
-            try:
-                in_features = model.classifier.in_features  # אם זו Linear ישירה
-                model.classifier = nn.Linear(in_features, CONFIG["num_classes"])
-            except AttributeError:
-                model.fc = nn.Linear(model.fc.in_features, CONFIG["num_classes"])  # לגיבוי
+        elif isinstance(classifier_module, nn.Linear):
+            model.classifier = nn.Linear(classifier_module.in_features, CONFIG["num_classes"])
+        elif hasattr(model, 'fc'):
+            model.fc = nn.Linear(model.fc.in_features, CONFIG["num_classes"])
         return model
 
 
@@ -30,6 +30,7 @@ class ResNetModelWrapper(BaseModelWrapper):
         if inputs.ndim == 3:
             inputs = inputs.unsqueeze(0)  
 
+        # עבור binary classification עם BCE loss - צריך float
         labels = labels.view(-1, 1).float()
         return inputs, labels
 

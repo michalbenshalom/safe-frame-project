@@ -9,18 +9,15 @@ from torch.utils.data import Subset
 
 def test_model(model, test_dataset=None, weights_path=None,):
    
-    if MODEL_TYPE not in MODEL_WRAPPERS:
-        raise ValueError(f"Unknown model type: {MODEL_TYPE}")
+    if CONFIG["model_type"] not in MODEL_WRAPPERS:
+        raise ValueError(f"Unknown model type: {CONFIG["model_type"]}")
 
     # Load data
-    # test_dataset = Subset(test_dataset, list(range(100))) #michalbs
     test_loader = DataLoader(test_dataset, batch_size=CONFIG["batch_size"], shuffle=False)
-
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     
-    model_wrapper = MODEL_WRAPPERS[MODEL_TYPE]() #ModelWrapperFactory.create(MODEL_TYPE, CONFIG)
+    model_wrapper = MODEL_WRAPPERS[CONFIG["model_type"]]() #ModelWrapperFactory.create(CONFIG["model_type"], CONFIG)
     if not isinstance(model_wrapper, BaseModelWrapper):
         raise TypeError("ModelWrapper must inherit from BaseModelWrapper")
 

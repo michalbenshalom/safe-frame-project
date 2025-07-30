@@ -11,6 +11,9 @@ def process_and_validate_videos():
     """
     all_results = []
     labels_by_category = {}
+    
+    # משתנים לספירת תיוגים
+    total_labels = {0: 0, 1: 0}
 
     for category, event_folder, file_name, file_bytes in stream_s3_videos():
         if category not in labels_by_category:
@@ -19,6 +22,16 @@ def process_and_validate_videos():
         labels = labels_by_category[category]
         saved = process_single_video(file_bytes, category, event_folder, file_name, labels)
         all_results.append((category, event_folder, file_name, saved))
+
+        # עדכון ספירת תיוגים
+        for label in labels.values():
+            if label in total_labels:
+                total_labels[label] += 1
+
+    # הדפסת איזון הדאטה
+    print("Class distribution:")
+    for label, count in total_labels.items():
+        print(f"  Class {label}: {count}")
 
     return all_results
 

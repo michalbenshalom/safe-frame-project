@@ -7,6 +7,7 @@ class BaseModelWrapper(ABC):
         self.config = config
         self.model = self.get_model()
         self.init_criterion()
+        self.setup_training_strategy()
 
     @abstractmethod
     def get_model(self):
@@ -34,6 +35,31 @@ class BaseModelWrapper(ABC):
         loss_params = self.config.get("loss_params", {})
         self.criterion = get_loss_fn(loss_type, loss_params)
 
+    def setup_training_strategy(self):
+        """
+        מגדיר אסטרטגיית אימון - אימון מלא או רק שכבות עליונות
+        """
+        strategy = self.config.get("train_strategy", "full")
+        
+        if strategy == "top_layers":
+            self.freeze_backbone_layers()
+            print(f"🔒 Frozen backbone layers - training only top layers")
+        else:
+            print(f"🔄 Training full model")
+
+    def freeze_backbone_layers(self):
+        """
+        מקפיא את השכבות הבסיסיות של המודל (backbone)
+        """
+        for name, param in self.model.named_parameters():
+            param.requires_grad = False
+            # אפשר גם להחריג שכבות ספציפיות
+        if hasattr(self.model, 'classifier'):
+            for param in self.model.classifier.parameters():
+                param.requires_grad = True
+                
+
+ 
     def get_best_model_filename(self):
         return f"{self.__class__.__name__}_best.pth"
     
