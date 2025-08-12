@@ -2,11 +2,11 @@ RELOAD_DATASET = False
 USE_EXISTING_MODEL = False
 CONFIG = {
     "model_type": "VIT",
-    "val_size" : 0.1,  # 0.1
-    "test_size": 0.3,   # 0.3
+    "val_size" : 0.15,  # 0.1
+    "test_size": 0.15,   # 0.3
     "batch_size": 32, 
-    "epochs": 6,
-    "limit_dataset":5000,
+    "epochs": 2,
+    "limit_dataset":7000,
     "dataset_percent": 15,
     "learning_rate": 2e-5,
     "model_names": ["resnet", "vit"],
@@ -16,8 +16,8 @@ CONFIG = {
     "continue_training": False,  # האם להמשיך אימון מודל קיים מ-S3
     "use_augmentation": False,  # האם להשתמש ב-data augmentation
     "train_strategy": "full",  # "full" או "top_layers" - אימון מלא או רק שכבות עליונות 
-    "save_dir": "C:/Users/MichalBenShalom/OneDrive - Infraedge LTD/Desktop/הורדות/course/Project/trained_model/",  
-    "checkpoint_dir": "./checkpoints/",
+    "save_dir": "/content/drive/MyDrive/ml_project/safe-frame-project/trained_model/",  
+    "checkpoint_dir": "/content/drive/MyDrive/ml_project/safe-frame-project/checkpoints/",
     "model_hf_names": {
         "vit": "google/vit-base-patch16-224-in21k",
         "resnet": "microsoft/resnet-50"

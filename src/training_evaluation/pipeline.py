@@ -2,7 +2,7 @@ from loguru import logger
 from training_evaluation.Test.test_stage import test_model
 from model_wrapper.data.image_utils import load_dataset
 from model_wrapper.data.dataset_loader import split_dataset
-from config import CONFIG,MODEL_TYPE,USE_EXISTING_MODEL
+from config import CONFIG,USE_EXISTING_MODEL
 from utils.ModelsTypes import MODEL_WRAPPERS
 from .train.trainer import train
 from utils.s3_model_manager import S3ModelManager

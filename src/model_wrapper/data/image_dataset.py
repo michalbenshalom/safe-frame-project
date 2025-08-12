@@ -2,8 +2,8 @@ import torch
 from torch.utils.data import Dataset
 from PIL import Image
 from torchvision import transforms
-from config import MODEL_TYPE
 import random
+from config import CONFIG
 
 
 def get_transforms(use_augmentation=False, is_train=True):
@@ -11,10 +11,10 @@ def get_transforms(use_augmentation=False, is_train=True):
     בונה את רשימת ה־transforms המתאימים לפי MODEL_TYPE ו־augmentation
     """
     # נרמול לפי סוג המודל
-    if MODEL_TYPE == "resnet":
+    if CONFIG["model_type"] == "resnet":
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                          std=[0.229, 0.224, 0.225])
-    elif MODEL_TYPE == "vit":
+    elif CONFIG["model_type"] == "vit":
         normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5],
                                          std=[0.5, 0.5, 0.5])
     else:
